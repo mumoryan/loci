@@ -18,7 +18,7 @@ Dispatch to these agents only:
 | frontend-implementer | spec_path (specs/*.md) | false |
 | backend-implementer | spec_path (specs/*.md) | false |
 | world-builder | mood/theme string + optional note context | true |
-| code-reviewer | spec_path + files_written[] | false |
+| reviewer | spec_path + diff | false |
 
 ## [DYNAMIC] Loci Protected Paths
 Never dispatch tasks that require writing to:

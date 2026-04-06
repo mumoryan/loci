@@ -71,7 +71,7 @@ from three layers:
 | frontend-implementer | spec-path → frontend code | claude-sonnet-4-6 |
 | backend-implementer | spec-path → API code | claude-sonnet-4-6 |
 | world-builder | mood/theme → environment JSON | claude-sonnet-4-6 |
-| code-reviewer | code + spec → validation result | claude-haiku-4-5-20251001 |
+| reviewer | diff + spec → validation result | claude-haiku-4-5-20251001 |
 
 ---
 

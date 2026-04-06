@@ -96,7 +96,7 @@ The schema does not change.
 | frontend-implementer | spec-path → frontend code | claude-sonnet-4-6 | false |
 | backend-implementer | spec-path → API code | claude-sonnet-4-6 | false |
 | world-builder | mood/theme → environment JSON | claude-sonnet-4-6 | true |
-| code-reviewer | code + spec → validation result | claude-haiku-4-5-20251001 | false |
+| reviewer | diff + spec → validation result | claude-haiku-4-5-20251001 | false |
 
 ### Dispatch rules
 1. No spec → no dispatch. Supervisor writes spec first.

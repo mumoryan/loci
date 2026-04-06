@@ -34,7 +34,7 @@ Do not assume anything about current state — read it.
 | frontend-implementer | spec-path → frontend code | claude-sonnet-4-6 | false |
 | backend-implementer | spec-path → API code | claude-sonnet-4-6 | false |
 | world-builder | mood/theme → environment JSON | claude-sonnet-4-6 | true |
-| code-reviewer | code + spec → validation result | claude-haiku-4-5-20251001 | false |
+| reviewer | diff + spec → validation result | claude-haiku-4-5-20251001 | false |
 
 ## Input Contract (enforced by supervisor)
 - Specialists only accept spec file paths — never freeform descriptions

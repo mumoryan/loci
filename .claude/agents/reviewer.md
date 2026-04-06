@@ -1,13 +1,17 @@
 ---
-# Layer 3: Loci code-reviewer agent
-name: code-reviewer
+# Layer 3: Loci reviewer agent
+name: reviewer
 extends:
-  base: ../../../agent-primitives/base/code-reviewer.md
+  base: ../../../agent-primitives/base/reviewer.md
 model: claude-haiku-4-5-20251001
 cost_bucket: review
 
 input:
-  accepts: spec_path_and_files_written
+  type: spec_path_and_diff
+  schema:
+    spec_path: string
+    diff: string
+    diff_type: "code | config | contract | optimization"
   rejects:
     - freeform_review_requests
     - note_content
