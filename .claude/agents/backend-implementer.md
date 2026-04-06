@@ -1,33 +1,29 @@
 ---
 # Layer 3: Loci backend implementation agent
+# Conforms to agent-contract schema v2 (agent-primitives/schema/agent-contract.md)
 name: backend-implementer
 extends:
   base: ../../../agent-primitives/base/spec-to-code.md
   stack: ../../../agent-primitives/stacks/ts-fastify.md
-model: claude-sonnet-4-6
+model: sonnet
 cost_bucket: code_generation
 
-input:
-  accepts: spec_file_path
-  spec_root: "specs/"
-  rejects:
-    - freeform_task_description
-    - note_content
-    - architecture_questions
+execution:
+  file_scope: ["backend/src/"]
 
 tools:
-  - name: read_file
+  - name: Read
     type: raw
-    scope: "backend/src/**, specs/**, backend/db/**"
-  - name: str_replace
+    scope: "backend/**, specs/**, ARCHITECTURE.md"
+    server: null
+  - name: Write
     type: raw
-    scope: "backend/src/**, backend/db/**"
-  - name: create_file
+    scope: "backend/src/**"
+    server: null
+  - name: Bash
     type: raw
-    scope: "backend/src/**, backend/db/**"
-  - name: bash
-    type: raw
-    allowed_commands: ["bun test", "bun run typecheck", "bun run lint"]
+    scope: "typecheck, lint, migration"
+    server: null
 
 review_policy:
   mode: auto
@@ -63,3 +59,5 @@ Loci-specific rules:
 - SQLite for V1 — do not introduce Postgres dependencies
 - Multi-user trigger is a second human user joining, not a performance threshold
   Do not add Postgres or pgvector until that trigger is hit
+- Stack: Fastify (TypeScript) + Bun + SQLite
+- Exit condition: `tsc` compiles clean, no lint errors, migration file included if schema changed

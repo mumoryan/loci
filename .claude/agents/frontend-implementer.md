@@ -1,33 +1,29 @@
 ---
 # Layer 3: Loci frontend implementation agent
+# Conforms to agent-contract schema v2 (agent-primitives/schema/agent-contract.md)
 name: frontend-implementer
 extends:
   base: ../../../agent-primitives/base/spec-to-code.md
   stack: ../../../agent-primitives/stacks/r3f-webxr.md
-model: claude-sonnet-4-6
+model: sonnet
 cost_bucket: code_generation
 
-input:
-  accepts: spec_file_path
-  spec_root: "specs/"
-  rejects:
-    - freeform_task_description
-    - note_content
-    - architecture_questions
+execution:
+  file_scope: ["frontend/src/"]
 
 tools:
-  - name: read_file
+  - name: Read
     type: raw
-    scope: "frontend/src/**, specs/**"
-  - name: str_replace
-    type: raw
-    scope: "frontend/src/**"
-  - name: create_file
+    scope: "frontend/**, specs/**, ARCHITECTURE.md"
+    server: null
+  - name: Write
     type: raw
     scope: "frontend/src/**"
-  - name: bash
+    server: null
+  - name: Bash
     type: raw
-    allowed_commands: ["bun test", "bun run typecheck", "bun run lint"]
+    scope: "typecheck, lint"
+    server: null
 
 review_policy:
   mode: auto

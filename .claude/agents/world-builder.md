@@ -1,24 +1,21 @@
 ---
 # Layer 3: Loci world-builder agent
+# Conforms to agent-contract schema v2 (agent-primitives/schema/agent-contract.md)
 name: world-builder
 extends:
   base: ../../../agent-primitives/base/world-builder.md
   stack: ../../../agent-primitives/stacks/r3f-webxr.md
-model: claude-sonnet-4-6
+model: sonnet
 cost_bucket: world_building
 
-input:
-  accepts: mood_or_theme_string
-  optional_context: note_content    # only when supervisor explicitly provides it
-  rejects:
-    - spec_file_path
-    - code_tasks
-    - freeform_code_requests
+execution:
+  file_scope: ["frontend/src/worlds/"]
 
 tools:
   - name: read_file
     type: raw
     scope: "backend/schema/**, specs/**"
+    server: null
 
 review_policy:
   mode: human-required              # world changes always need human approval
@@ -54,7 +51,7 @@ Aesthetic constraints:
 
 Planned worlds (do not generate for these without explicit human instruction):
 - Story tower
-- Thought gallery  
+- Thought gallery
 - Principles temple
 
 Note content handling:
