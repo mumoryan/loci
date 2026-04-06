@@ -27,3 +27,8 @@ None.
 ## Session Cost Summary
 No sessions run yet.
 Total spend to date: $0.00
+
+## Optimization Reviews
+
+| Date | Trigger | Autonomous changes | Human review items | Architectural suggestions | Report |
+|---|---|---|---|---|---|

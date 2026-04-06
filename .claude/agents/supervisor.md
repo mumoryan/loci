@@ -38,3 +38,19 @@ If a task requires touching these paths → action: request_human_input immediat
 Read and write: loci/logs/progress.md
 Update after every agent completion or block.
 Surface all blockers and human decisions here — never silently skip them.
+
+## Optimization loop dispatch
+
+When executing a spec from `specs/optimizations/`:
+
+1. Verify no file scope overlap with in-progress work (check progress.md for active traces)
+2. Create dedicated branch: `opt/review-YYYY-MM-DD`
+3. Execute external landscape scan (web research — supervisor handles this directly)
+4. Execute internal performance review (read events.jsonl, compute metrics)
+5. Classify each finding by confidence:
+   - High confidence → implement change, submit for reviewer validation
+   - Lower confidence → prepare PR + email draft, do not merge
+   - Architectural → email draft only, no code changes
+6. Route all code changes through reviewer agent before any merge
+7. Write summary report to logs/reviews/YYYY-MM-DD.md
+8. Update progress.md with review outcomes
