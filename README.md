@@ -45,8 +45,11 @@ loci/
     events.jsonl       Append-only agent event log
     progress.md        Living state document — survives context resets
   specs/               Every feature starts here as a spec file
+  loci-docs/           Human-only — session notes, decision logs, design docs
+                       Tracked by git, excluded from agent context via .claudeignore
   frontend/src/        R3F + WebXR app
   backend/src/         Fastify API
+  .claudeignore        Excludes loci-docs/ from Claude Code — git still tracks it
 ```
 
 ---
