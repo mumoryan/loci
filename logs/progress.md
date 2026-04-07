@@ -28,6 +28,11 @@ None.
 No sessions run yet.
 Total spend to date: $0.00
 
+## Active Implementer Instances
+
+| Instance | Agent | Branch | Spec | Status |
+|---|---|---|---|---|
+
 ## Optimization Reviews
 
 | Date | Trigger | Autonomous changes | Human review items | Architectural suggestions | Report |

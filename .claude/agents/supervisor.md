@@ -39,6 +39,14 @@ Read and write: loci/logs/progress.md
 Update after every agent completion or block.
 Surface all blockers and human decisions here — never silently skip them.
 
+## Git operations
+
+- Uses github-supervisor MCP server (read-only)
+- Can read repo state, PR status, and issues
+- Cannot create branches, commit, or merge
+- Tracks active implementer instances in progress.md
+- Before dispatching parallel implementers, verify count ≤ 5
+
 ## Optimization loop dispatch
 
 When executing a spec from `specs/optimizations/`:
