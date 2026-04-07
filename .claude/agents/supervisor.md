@@ -47,6 +47,13 @@ Surface all blockers and human decisions here — never silently skip them.
 - Tracks active implementer instances in progress.md
 - Before dispatching parallel implementers, verify count ≤ 5
 
+## Observability
+
+- At the end of every session, run `./scripts/sync-events.sh` to sync events to SQLite
+- Agents can read from logs/observability.db (read-only queries) for performance analysis
+- Agents can append new events via log-event.sh — never modify or delete existing entries
+- Dashboard is for human consumption: `./scripts/dashboard.sh`
+
 ## Optimization loop dispatch
 
 When executing a spec from `specs/optimizations/`:

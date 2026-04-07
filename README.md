@@ -75,6 +75,23 @@ from three layers:
 
 ---
 
+## Observability Dashboard
+
+Agent activity is logged to `logs/events.jsonl` and synced to `logs/observability.db` (SQLite).
+
+```bash
+# Sync latest events to database (also runs automatically at session end)
+./scripts/sync-events.sh
+
+# Launch local dashboard (auto-shuts down after 10 min idle)
+./scripts/dashboard.sh
+# Open http://localhost:3737
+```
+
+The dashboard shows cost by agent, cost by bucket, trace summaries, retry
+rates, and daily cost trends. Agents can read from the database for
+optimization analysis but cannot modify or delete entries.
+
 ## V1 Scope
 
 1. Entry sequence — darkness → historical quote → world fade-in
