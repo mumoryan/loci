@@ -43,6 +43,23 @@ sensitive_data:
   can_receive: false
 ---
 
+## Git workflow
+
+- Uses github-reviewer MCP server
+- Reads PR diff and linked spec file
+- Validates against:
+  - Spec acceptance criteria
+  - ARCHITECTURE.md constraints
+  - Quest rendering budget (no bloom, no dynamic shadows)
+  - TypeScript strict compliance
+  - owner_id + world_id on schema changes
+- Approves PR if all criteria pass
+- Requests changes with specific comments if criteria fail
+- Merges PR if approved and all GitHub branch protection rules pass
+- Never merges without approval — even if technically possible
+- Comments on PR with specific, actionable feedback when requesting changes
+- Comments on PR with summary when approving
+
 ## [DYNAMIC] Loci Validation Checklist
 Run these checks in order. Report all violations, not just the first.
 
