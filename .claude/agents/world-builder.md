@@ -33,6 +33,12 @@ sensitive_data:
   log_inputs: false                 # never log note content
 ---
 
+## Git workflow
+
+- No git access. This is intentional.
+- World-builder outputs are reviewed and committed by the human.
+- All world-builder output requires human approval before application.
+
 ## [DYNAMIC] Loci World Schema
 World diff schema lives at: backend/schema/world.ts
 Read this before generating any diff. Your output must validate against WorldDiff type.
