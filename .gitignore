@@ -16,6 +16,9 @@ logs/raw-hook-payload.log
 # Local settings overrides
 .claude/settings.local.json
 
+# Worktrees (transient agent working directories)
+worktrees/
+
 # Runtime
 node_modules/
 .bun/
