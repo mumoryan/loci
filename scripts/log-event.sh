@@ -6,11 +6,12 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG_FILE="$SCRIPT_DIR/../logs/events.jsonl"
 INPUT=$(cat)
+echo "$INPUT" >> "$SCRIPT_DIR/../logs/raw-hook-payload.log"
 
 # Extract fields from hook input
 AGENT=$(echo "$INPUT" | jq -r '.agent_name // "unknown"')
 TOOL=$(echo "$INPUT" | jq -r '.tool_name // "unknown"')
-TOOL_INPUT=$(echo "$INPUT" | jq -r '.tool_input // {}')
+TOOL_INPUT_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // .tool_input.command // ""')
 TOOL_RESULT=$(echo "$INPUT" | jq -r '.tool_result // {}')
 SESSION_ID="${LOCI_SESSION_ID:-ses_$(date +%s)}"
 TRACE_ID="${LOCI_TRACE_ID:-trc_unknown}"

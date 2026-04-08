@@ -1,37 +1,47 @@
 # Loci — Agent Progress State
-_Last updated: initial | No sessions run yet_
+_Last updated: 2026-04-06 | Session 05_
 
 ---
 
 ## Current Trace
-**Trace ID:** none
-**Feature:** none
-**Status:** ready
-**Started:** —
+**Trace ID:** trace-005
+**Feature:** entry-sequence
+**Spec:** specs/features/entry-sequence.md
+**Status:** complete
+**Started:** 2026-04-06
+**Finished:** 2026-04-06
 
 ## Completed Traces
-None yet.
+
+| Trace | Feature | Spec | Outcome | Date |
+|---|---|---|---|---|
+| trace-005 | entry-sequence | specs/features/entry-sequence.md | approved | 2026-04-06 |
 
 ## Completed This Trace
-None yet.
+- [x] frontend-implementer: implement entry-sequence.md
+- [x] reviewer: validate implementation against spec → approved, 0 violations
 
 ## Blockers
 None.
 
 ## Last Agent Output Summary
-No agents have run yet.
+Reviewer approved the entry-sequence implementation with no violations.
+Three files created: constants/timing.ts, data/quotes.ts, components/EntrySequence.tsx.
+All spec acceptance criteria satisfied. Quest rendering budget respected.
+Awaiting human headset test per features workflow.
 
 ## Open Decisions Needed from Human
-None.
+- [ ] Headset test required (Quest standalone) — see specs/features/entry-sequence.md acceptance criteria
 
 ## Session Cost Summary
-No sessions run yet.
-Total spend to date: $0.00
+Session 05: 2 agent dispatches (frontend-implementer + reviewer)
+Total spend to date: tracked in logs/events.jsonl
 
 ## Active Implementer Instances
 
 | Instance | Agent | Branch | Spec | Status |
 |---|---|---|---|---|
+| 1 | frontend-implementer | frontend-implementer-1/features/entry-sequence | specs/features/entry-sequence.md | complete |
 
 ## Optimization Reviews
 
