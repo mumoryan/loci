@@ -35,6 +35,15 @@ Notes are primary; worlds are atmosphere.
       ts-fastify.md
     schema/                      Contract schema definition
       agent-contract.md          Schema v2 — all agents conform to this
+    scripts/                     Reusable infrastructure scripts
+      start.sh                   Session bootstrap, prereqs, ID generation
+      dispatch.sh                Prepare worktree for agent instance
+      end.sh                     Teardown, log sync, worktree cleanup
+      guard-supervisor.sh        Bash allowlist for supervisor agent
+    observability/               Reusable observability tooling
+      schema.sql
+      sync-events.sh
+      dashboard.ts
 
   loci/                          This repo
     .claude/
@@ -48,23 +57,63 @@ Notes are primary; worlds are atmosphere.
         reviewer.md
     scripts/
       guard-core.sh              PreToolUse — blocks writes to protected paths
+      guard-supervisor.sh         PreToolUse — bash allowlist for supervisor
       log-event.sh               PostToolUse — observability logging
       merge-agent.sh             Concatenates base + stack + stub at session start
+      loci-start.sh              Wrapper → agent-primitives/scripts/start.sh
+      loci-dispatch.sh           Wrapper → agent-primitives/scripts/dispatch.sh
+      loci-end.sh                Wrapper → agent-primitives/scripts/end.sh
+      sync-events.sh             Wrapper → agent-primitives/observability/sync-events.sh
+      dashboard.sh               Wrapper → agent-primitives/observability/dashboard.ts
     logs/
       events.jsonl               Append-only structured event log
+      observability.db           SQLite — synced from events.jsonl (gitignored)
       progress.md                Living state doc — supervisor reads/writes each session
+      archive/                   Session snapshots
+      reviews/                   Optimization review reports
     specs/
       features/                  User-facing capabilities
         entry-sequence.md
-      refactors/                 Structural changes, renames, dependency upgrades
+      refactors/                 Structural changes
       optimizations/             Periodic performance + architecture reviews
+        TEMPLATE.md
       architecture/              Contract changes, agent definition proposals
-        contract-schema-v2.md
+    worktrees/                   Transient agent working directories (gitignored)
     loci-docs/                   Human-only — excluded via .claudeignore
     frontend/src/
     backend/src/
     ARCHITECTURE.md              Constitution — read this, never write to it
 ```
+
+---
+
+## Session Lifecycle
+
+Never run `claude` directly. Sessions are managed by infrastructure scripts.
+
+```
+Human runs: loci-start.sh
+  → Prerequisites verified
+  → Session/trace IDs generated (LOCI_SESSION_ID, LOCI_TRACE_ID)
+  → Hooks verified
+  → Claude Code launched
+
+Supervisor works:
+  → Reads CLAUDE.md, progress.md, spec
+  → Calls loci-dispatch.sh to prepare worktrees
+  → Dispatches subagents into worktrees
+  → Subagents do git operations via GitHub MCP (agent identity preserved)
+  → Routes to reviewer, handles retry loop
+  → Updates progress.md
+
+Human runs: loci-end.sh
+  → Events synced to observability DB
+  → Merged worktrees cleaned up
+  → Session archived
+```
+
+AI handles judgment (spec decomposition, code, review). Scripts handle
+mechanics (worktrees, IDs, hooks, cleanup).
 
 ---
 
@@ -80,9 +129,6 @@ Notes are primary; worlds are atmosphere.
 
 All agents conform to agent contract schema v2 (see agent-primitives/schema/agent-contract.md).
 
-Frontend and backend implementers share the same base (spec-to-code.md).
-Differentiation happens at the Layer 3 stub level.
-
 ---
 
 ## Dispatch Rules
@@ -93,6 +139,8 @@ Differentiation happens at the Layer 3 stub level.
 4. Reviewer runs after every implementation. Escalates to supervisor on failure.
 5. Human approval required for all world-builder outputs.
 6. Max 2 retry iterations per agent per spec. Third failure → blocker, human resolves.
+7. Before dispatching, run `loci-dispatch.sh` to prepare the worktree.
+8. Max 5 parallel implementer instances (enforced by dispatch.sh).
 
 ---
 
@@ -112,7 +160,24 @@ Differentiation happens at the Layer 3 stub level.
 guard-core.sh blocks all agent writes to:
 `.claude/`, `ARCHITECTURE.md`, `CLAUDE.md`, `mcp.json`, `agents/`
 
+guard-supervisor.sh restricts supervisor bash to approved scripts and
+read-only commands only.
+
 Agents have full write access to `frontend/`, `backend/`, `specs/`.
+
+---
+
+## Git Operations
+
+Agents do all git operations via GitHub MCP with per-role tokens:
+- Supervisor: read-only (repos, PRs, issues)
+- Implementers: read/write code, create PRs (cannot merge)
+- Reviewer: read code, approve/merge PRs (cannot push code)
+- World-builder: no git access
+
+Branch naming: `<agent>-<instance>/<category>/<spec-name>`
+Implementers work in isolated worktrees created by dispatch.sh.
+Scripts/ directory is not visible to any agent except supervisor.
 
 ---
 
@@ -151,8 +216,9 @@ Do not revisit without explicit human instruction:
 
 - Every tool call → one JSON line to logs/events.jsonl via log-event.sh
 - Zero tokens — runs outside agent context
-- Agents never re-read events.jsonl
-- Supervisor summarises cost in logs/progress.md
+- Agents can read logs/observability.db (read-only). Never modify or delete.
+- Supervisor syncs events at session end via sync-events.sh
+- Dashboard: `./scripts/dashboard.sh` → localhost:3737 (10-min auto-shutdown)
 - Four cost buckets: code_generation, world_building, review, orchestration
 
 ---
@@ -160,19 +226,21 @@ Do not revisit without explicit human instruction:
 ## Current Status
 
 - Sessions 01–04 complete
-- Both repos on GitHub (private)
+- Both repos on GitHub (private, GitHub Pro)
 - Agent contract schema v2 applied to all agents
 - Reviewer renamed from code-reviewer, transformation generalized
-- Spec directory structure established (features, refactors, optimizations, architecture)
-- First feature spec (entry-sequence.md) ready for dispatch
-- Known debug: hook field names showing as `unknown` in log output
+- Spec directory structure established
+- GitHub MCP: 3 per-role fine-grained PATs, branch protection via `agentic-main-protection` ruleset
+- Optimization loop designed (template at specs/optimizations/TEMPLATE.md)
+- Observability dashboard designed (agent-primitives/observability/)
+- Scripted infrastructure layer implemented (start.sh, dispatch.sh, end.sh, guard-supervisor.sh)
+- Known bug: log-event.sh field extraction — all fields show "unknown". Debugging in progress.
+- Next action: fix log-event.sh, then run entry sequence via loci-start.sh
 
 ---
 
 ## Open Items
 
-- Optimization loop spec (periodic review process — designed, not implemented)
-- WorldDiff TypeScript type (world-builder output contract)
-- Git access policy (branch+commit for implementers, read-only for reviewer)
-- Observability dashboard (SQLite schema + browser UI)
+- Fix log-event.sh hook payload field mapping
+- WorldDiff TypeScript type (deferred until first world is built)
 - Data privacy / e2e encryption (post-PoC)
