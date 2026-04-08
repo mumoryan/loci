@@ -75,6 +75,25 @@ from three layers:
 
 ---
 
+## Session Lifecycle
+
+```bash
+# Start session — runs prerequisites, generates IDs, launches Claude
+./scripts/loci-start.sh
+
+# After Claude exits — syncs logs, cleans worktrees, archives
+./scripts/loci-end.sh
+
+# View observability dashboard
+./scripts/dashboard.sh
+```
+
+Never run `claude` directly. Always use `loci-start.sh` — it ensures hooks
+are verified, IDs are generated, and the environment is clean before any
+agent starts.
+
+---
+
 ## Observability Dashboard
 
 Agent activity is logged to `logs/events.jsonl` and synced to `logs/observability.db` (SQLite).
