@@ -10,6 +10,7 @@ logs/events.jsonl
 logs/*.log
 logs/raw-hook-payload.log
 logs/session-*.log
+logs/.session-state
 
 # Agent files are expanded in-place by merge-agent.sh at session start (gitignored)
 # Source state is preserved in git — merge-agent.sh overwrites for the session
