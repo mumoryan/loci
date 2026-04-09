@@ -5,8 +5,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
 echo "=== Merging agent definitions ==="
-for stub in "$PROJECT_DIR/.claude/agents/"*.stub.md; do
-  agent_name=$(basename "$stub" .stub.md)
+for stub in "$PROJECT_DIR/.claude/agents/"*.md; do
+  agent_name=$(basename "$stub" .md)
   "$SCRIPT_DIR/merge-agent.sh" "$agent_name"
 done
 echo ""

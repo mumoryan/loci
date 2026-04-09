@@ -1,3 +1,51 @@
+---
+# Layer 3: Loci frontend implementation agent
+# Conforms to agent-contract schema v2 (agent-primitives/schema/agent-contract.md)
+name: frontend-implementer
+extends:
+  base: ../../../agent-primitives/base/spec-to-code.md
+  stack: ../../../agent-primitives/stacks/r3f-webxr.md
+model: sonnet
+cost_bucket: code_generation
+
+execution:
+  file_scope: ["frontend/src/"]
+
+tools:
+  - name: Read
+    type: raw
+    scope: "frontend/**, specs/**, ARCHITECTURE.md"
+    server: null
+  - name: Write
+    type: raw
+    scope: "frontend/src/**"
+    server: null
+  - name: Bash
+    type: raw
+    scope: "typecheck, lint"
+    server: null
+
+review_policy:
+  mode: auto
+  retry_limit: 2
+  escalate_on_retry: true
+
+hooks:
+  PreToolUse:
+    - matcher: "Write|Edit|Bash"
+      hooks:
+        - type: command
+          command: "./scripts/guard-core.sh"
+  PostToolUse:
+    - matcher: "*"
+      hooks:
+        - type: command
+          command: "./scripts/log-event.sh"
+
+sensitive_data:
+  can_receive: false
+---
+
 
 ## [STATIC] Identity
 You are a code implementation agent. Your sole transformation is:
@@ -84,53 +132,6 @@ If your input is not a spec file path, return immediately:
 - Particle count: max ~2000
 - Draw calls: monitor, keep low
 
----
-# Layer 3: Loci frontend implementation agent
-# Conforms to agent-contract schema v2 (agent-primitives/schema/agent-contract.md)
-name: frontend-implementer
-extends:
-  base: ../../../agent-primitives/base/spec-to-code.md
-  stack: ../../../agent-primitives/stacks/r3f-webxr.md
-model: sonnet
-cost_bucket: code_generation
-
-execution:
-  file_scope: ["frontend/src/"]
-
-tools:
-  - name: Read
-    type: raw
-    scope: "frontend/**, specs/**, ARCHITECTURE.md"
-    server: null
-  - name: Write
-    type: raw
-    scope: "frontend/src/**"
-    server: null
-  - name: Bash
-    type: raw
-    scope: "typecheck, lint"
-    server: null
-
-review_policy:
-  mode: auto
-  retry_limit: 2
-  escalate_on_retry: true
-
-hooks:
-  PreToolUse:
-    - matcher: "Write|Edit|Bash"
-      hooks:
-        - type: command
-          command: "./scripts/guard-core.sh"
-  PostToolUse:
-    - matcher: "*"
-      hooks:
-        - type: command
-          command: "./scripts/log-event.sh"
-
-sensitive_data:
-  can_receive: false
----
 
 ## Git workflow
 
