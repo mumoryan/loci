@@ -6,13 +6,13 @@
 # Usage: ./scripts/merge-agent.sh <agent-name>
 # Example: ./scripts/merge-agent.sh frontend-implementer
 #
-# Output: .claude/agents/<agent-name>.merged.md (gitignored)
+# Output: .claude/agents/<agent-name>.md (gitignored — source is .stub.md)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOCI_ROOT="$SCRIPT_DIR/.."
 AGENTS_ROOT="$LOCI_ROOT/../../agents"
 AGENT_NAME="$1"
-STUB="$LOCI_ROOT/.claude/agents/${AGENT_NAME}.md"
+STUB="$LOCI_ROOT/.claude/agents/${AGENT_NAME}.stub.md"
 
 if [ -z "$AGENT_NAME" ]; then
   echo "Usage: merge-agent.sh <agent-name>" >&2
@@ -24,11 +24,11 @@ if [ ! -f "$STUB" ]; then
   exit 1
 fi
 
-# Extract extends fields from stub frontmatter
-BASE_REL=$(grep 'base:' "$STUB" | awk '{print $2}')
-STACK_REL=$(grep 'stack:' "$STUB" | awk '{print $2}')
+# Extract extends fields from stub frontmatter (-m1 = first match only)
+BASE_REL=$(grep -m1 '^\s*base:' "$STUB" | awk '{print $2}')
+STACK_REL=$(grep -m1 '^\s*stack:' "$STUB" | awk '{print $2}')
 
-OUTPUT="$LOCI_ROOT/.claude/agents/${AGENT_NAME}.merged.md"
+OUTPUT="$LOCI_ROOT/.claude/agents/${AGENT_NAME}.md"
 
 {
   # Layer 0+1: base (static — cache eligible)
@@ -36,7 +36,7 @@ OUTPUT="$LOCI_ROOT/.claude/agents/${AGENT_NAME}.merged.md"
     BASE_PATH="$LOCI_ROOT/.claude/agents/$BASE_REL"
     if [ -f "$BASE_PATH" ]; then
       # Strip frontmatter from base, keep body
-      awk '/^---/{f++; next} f==2{print} f==1' "$BASE_PATH"
+      awk '/^---/{f++; next} f>=2{print}' "$BASE_PATH"
       echo ""
     fi
   fi
@@ -45,7 +45,7 @@ OUTPUT="$LOCI_ROOT/.claude/agents/${AGENT_NAME}.merged.md"
   if [ -n "$STACK_REL" ]; then
     STACK_PATH="$LOCI_ROOT/.claude/agents/$STACK_REL"
     if [ -f "$STACK_PATH" ]; then
-      awk '/^---/{f++; next} f==2{print} f==1' "$STACK_PATH"
+      awk '/^---/{f++; next} f>=2{print}' "$STACK_PATH"
       echo ""
     fi
   fi

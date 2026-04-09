@@ -38,11 +38,24 @@ Permission separation enforced at token level:
 
 ## Part 2: GitHub MCP servers — COMPLETED MANUALLY
 
-Three MCP server instances registered in Claude Code with `--scope local`
-from `~/Development/loci-root/`:
-- `github-supervisor` — using GITHUB_PAT_AGENTIC_AI_SUPERVISOR
-- `github-implementer` — using GITHUB_PAT_AGENTIC_AI_IMPLEMENTER
-- `github-reviewer` — using GITHUB_PAT_AGENTIC_AI_REVIEWER
+Three MCP server instances registered in Claude Code (local project scope).
+PATs are stored in macOS Keychain (never in code or committed config):
+- Keychain service names: `github-supervisor-pat`, `github-implementer-pat`, `github-reviewer-pat` (account: `loci`)
+- MCP headers use `${GITHUB_SUPERVISOR_PAT}`, `${GITHUB_IMPLEMENTER_PAT}`, `${GITHUB_REVIEWER_PAT}`
+- `loci-start.sh` loads PATs from Keychain and exports them before launching Claude
+- Claude Code interpolates env vars into HTTP headers at connection time
+
+Servers:
+- `github-supervisor` — env var `GITHUB_SUPERVISOR_PAT`
+- `github-implementer` — env var `GITHUB_IMPLEMENTER_PAT`
+- `github-reviewer` — env var `GITHUB_REVIEWER_PAT`
+
+To re-register (e.g. after machine reset):
+```sh
+claude mcp add --transport http github-supervisor https://api.githubcopilot.com/mcp \
+  --header "Authorization: Bearer \${GITHUB_SUPERVISOR_PAT}"
+# repeat for implementer and reviewer
+```
 
 ---
 

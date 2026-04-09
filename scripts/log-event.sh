@@ -11,12 +11,15 @@ INPUT=$(cat)
 AGENT="unknown"  # Claude Code does not expose agent identity in PostToolUse hooks
 TOOL=$(echo "$INPUT" | jq -r '.tool_name // "unknown"')
 TOOL_INPUT_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // .tool_input.command // ""')
-TOOL_RESULT=$(echo "$INPUT" | jq -r '.tool_result // {}')
-SESSION_ID="${LOCI_SESSION_ID:-ses_$(date +%s)}"
-TRACE_ID="${LOCI_TRACE_ID:-trc_unknown}"
+TOOL_RESULT=$(echo "$INPUT" | jq -r '.tool_response // {}')
+# Use Claude Code's session_id from payload (env var not propagated to hook subprocess)
+SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // "ses_unknown"')
+# trace_id written to state file by loci-start.sh; not available in hook payload
+STATE_FILE="$SCRIPT_DIR/../logs/.session-state"
+TRACE_ID=$([ -f "$STATE_FILE" ] && jq -r '.trace_id // "trc_unknown"' "$STATE_FILE" 2>/dev/null || echo "trc_unknown")
 
 # Derive event metadata
-TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")
+TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 EVENT_ID="evt_$(date +%s%N | sha256sum | head -c 12)"
 
 # Determine tool type (raw vs mcp — extend as MCP tools are added)
