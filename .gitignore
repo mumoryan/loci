@@ -13,7 +13,7 @@ logs/session-*.log
 
 # Agent files are expanded in-place by merge-agent.sh at session start (gitignored)
 # Source state is preserved in git — merge-agent.sh overwrites for the session
-.claude/agents/*.md
+# .claude/agents/*.md
 
 # Local settings overrides
 .claude/settings.local.json
