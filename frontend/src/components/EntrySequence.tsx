@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Text } from '@react-three/drei'
 import * as THREE from 'three'
@@ -47,14 +47,16 @@ function selectQuote(sessionStartTime: number): Quote {
 }
 
 // Full-screen black overlay plane — sits at z = -0.5, in front of world but behind text
-function DarknessOverlay({ opacity }: { opacity: number }) {
+// opacityRef is a shared ref mutated each frame by the parent useFrame; we read it here
+// imperatively to avoid one-frame React state lag in XR.
+function DarknessOverlay({ opacityRef }: { opacityRef: React.RefObject<number> }) {
   const matRef = useRef<THREE.MeshBasicMaterial>(null)
 
-  useEffect(() => {
-    if (matRef.current) {
-      matRef.current.opacity = opacity
+  useFrame(() => {
+    if (matRef.current && opacityRef.current !== null) {
+      matRef.current.opacity = opacityRef.current
     }
-  }, [opacity])
+  })
 
   return (
     <mesh position={[0, 0, -0.5]}>
@@ -63,7 +65,7 @@ function DarknessOverlay({ opacity }: { opacity: number }) {
         ref={matRef}
         color="black"
         transparent
-        opacity={opacity}
+        opacity={1}
         depthWrite={false}
       />
     </mesh>
@@ -71,14 +73,20 @@ function DarknessOverlay({ opacity }: { opacity: number }) {
 }
 
 // Stub world — placeholder until Hokkaido world spec is implemented
-function WorldStub({ opacity }: { opacity: number }) {
-  const matRef = useRef<THREE.MeshBasicMaterial>(null)
+// opacityRef is a shared ref mutated each frame by the parent useFrame.
+function WorldStub({ opacityRef }: { opacityRef: React.RefObject<number> }) {
+  const groundMatRef = useRef<THREE.MeshBasicMaterial>(null)
+  const fogMatRef = useRef<THREE.MeshBasicMaterial>(null)
 
-  useEffect(() => {
-    if (matRef.current) {
-      matRef.current.opacity = opacity
+  useFrame(() => {
+    const opacity = opacityRef.current ?? 0
+    if (groundMatRef.current) {
+      groundMatRef.current.opacity = opacity
     }
-  }, [opacity])
+    if (fogMatRef.current) {
+      fogMatRef.current.opacity = opacity * 0.6
+    }
+  })
 
   return (
     <group>
@@ -86,16 +94,16 @@ function WorldStub({ opacity }: { opacity: number }) {
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.6, 0]}>
         <planeGeometry args={[40, 40]} />
         <meshBasicMaterial
-          ref={matRef}
+          ref={groundMatRef}
           color="#1a1a2e"
           transparent
-          opacity={opacity}
+          opacity={0}
         />
       </mesh>
       {/* Horizon fog box — simple atmospheric suggestion */}
       <mesh position={[0, 2, -8]}>
         <boxGeometry args={[20, 6, 0.1]} />
-        <meshBasicMaterial color="#0d1b2a" transparent opacity={opacity * 0.6} />
+        <meshBasicMaterial ref={fogMatRef} color="#0d1b2a" transparent opacity={0} />
       </mesh>
     </group>
   )
@@ -110,9 +118,11 @@ export function EntrySequence({ onComplete }: EntrySequenceProps) {
   const quote = useRef<Quote>(selectQuote(sessionStartTime.current))
 
   const [phase, setPhase] = useState<SequencePhase>('DARKNESS')
-  const [darknessOpacity, setDarknessOpacity] = useState(1)
   const [quoteOpacity, setQuoteOpacity] = useState(0)
-  const [worldOpacity, setWorldOpacity] = useState(0)
+
+  // Shared opacity refs — mutated imperatively each frame; child components read them in useFrame
+  const darknessOpacityRef = useRef<number>(1)
+  const worldOpacityRef = useRef<number>(0)
 
   // Phase start time in seconds (elapsed from useFrame clock)
   const phaseStartRef = useRef<number | null>(null)
@@ -182,9 +192,9 @@ export function EntrySequence({ onComplete }: EntrySequenceProps) {
       case 'WORLD_FADE_IN': {
         const fadeS = ENTRY_TIMING.WORLD_FADE_IN_MS * MS
         const progress = Math.min(t / fadeS, 1)
-        // Darkness lifts as world fades in
-        setDarknessOpacity(1 - progress)
-        setWorldOpacity(progress)
+        // Mutate opacity refs directly — child useFrame hooks read these each frame
+        darknessOpacityRef.current = 1 - progress
+        worldOpacityRef.current = progress
         if (progress >= 1) {
           setPhaseRef('COMPLETE')
           onComplete?.()
@@ -202,8 +212,8 @@ export function EntrySequence({ onComplete }: EntrySequenceProps) {
 
   return (
     <group>
-      {/* World stub — always mounted, opacity controlled by sequence */}
-      <WorldStub opacity={worldOpacity} />
+      {/* World stub — always mounted, opacity controlled via ref by parent useFrame */}
+      <WorldStub opacityRef={worldOpacityRef} />
 
       {/* Quote text — troika-three-text via @react-three/drei Text */}
       {!isComplete && (
@@ -225,7 +235,7 @@ export function EntrySequence({ onComplete }: EntrySequenceProps) {
       )}
 
       {/* Full-screen darkness overlay — rendered last so it sits on top */}
-      {!isComplete && <DarknessOverlay opacity={darknessOpacity} />}
+      {!isComplete && <DarknessOverlay opacityRef={darknessOpacityRef} />}
     </group>
   )
 }

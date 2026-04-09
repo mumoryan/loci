@@ -13,8 +13,8 @@ export const quotes: Quote[] = [
     author: "Carl Sagan",
   },
   {
-    text: "We are all just walking each other home.",
-    author: "Ram Dass",
+    text: "You have power over your mind, not outside events. Realize this, and you will find strength.",
+    author: "Marcus Aurelius",
   },
   {
     text: "Time is a created thing. To say 'I don't have time' is to say 'I don't want to.'",
@@ -33,12 +33,12 @@ export const quotes: Quote[] = [
     author: "Albert Einstein",
   },
   {
-    text: "To think is to practice brain chemistry.",
-    author: "Deepak Chopra",
+    text: "To be yourself in a world that is constantly trying to make you something else is the greatest accomplishment.",
+    author: "Ralph Waldo Emerson",
   },
   {
-    text: "The only way out of the labyrinth of suffering is to forgive.",
-    author: "John Green",
+    text: "The present contains nothing more than the past, and what is found in the effect was already in the cause.",
+    author: "Henri Bergson",
   },
   {
     text: "Thought is the wind, knowledge the sail, and mankind the vessel.",
