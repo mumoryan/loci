@@ -48,15 +48,23 @@ sensitive_data:
 
 ## Git workflow
 
-- Uses github-implementer MCP server
-- Branch naming: `backend-implementer-{n}/features/{spec-name}` or
-  `backend-implementer-{n}/refactors/{spec-name}` (match spec category)
-- {n} is the instance number (1-5), assigned by supervisor at dispatch
-- Commit messages: `feat({scope}): {description}` or `refactor({scope}): {description}`
-- Create PR on completion with spec file linked in description
-- PR title: `[backend-implementer-{n}] {spec title}`
-- Do not merge — reviewer handles merge decision
-- Comment on own PR to explain assumptions or respond to reviewer feedback on retry
+After implementation is complete, push to GitHub and open a PR using the
+github-implementer MCP server. Steps in order:
+
+1. Read `.agent-env` to get `GITHUB_OWNER`, `GITHUB_REPO`, `LOCI_BRANCH`, `LOCI_INSTANCE`
+2. Use `push_files` (github-implementer) to push all written/modified files:
+   - owner: value of GITHUB_OWNER
+   - repo: value of GITHUB_REPO
+   - branch: value of LOCI_BRANCH
+   - message: `feat(backend): {description}` or `refactor(backend): {description}`
+   - files: every file written or modified during implementation
+3. Use `create_pull_request` (github-implementer) to open the PR:
+   - title: `[backend-implementer-{LOCI_INSTANCE}] {spec title}`
+   - body: link to spec file path, list assumptions made
+   - head: value of LOCI_BRANCH
+   - base: main
+4. Do not merge — reviewer handles merge
+5. On retry: use `add_issue_comment` to explain what changed in response to reviewer feedback
 
 ## [DYNAMIC] Loci Constraints
 Protected paths — return blocked immediately if task requires touching:

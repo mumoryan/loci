@@ -26,7 +26,7 @@ Notes are primary; worlds are atmosphere.
 ~/Development/loci-root/
   agent-primitives/              Shared base definitions (own git repo)
     base/                        Layer 0+1: identity + capability contracts
-      orchestrator.md            Supervisor base
+      orchestrator.md            Orchestrator base
       spec-to-code.md           Implementer base (frontend + backend share this)
       world-builder.md          World builder base
       reviewer.md               Reviewer base
@@ -39,7 +39,7 @@ Notes are primary; worlds are atmosphere.
       start.sh                   Session bootstrap, prereqs, ID generation
       dispatch.sh                Prepare worktree for agent instance
       end.sh                     Teardown, log sync, worktree cleanup
-      guard-supervisor.sh        Bash allowlist for supervisor agent
+      guard-orchestrator.sh        Bash allowlist for orchestrator agent
     observability/               Reusable observability tooling
       schema.sql
       sync-events.sh
@@ -50,14 +50,14 @@ Notes are primary; worlds are atmosphere.
       CLAUDE.md                  This file
       settings.json              Hook config (PreToolUse + PostToolUse)
       agents/                    Layer 3: Loci-specific stubs
-        supervisor.md
+        orchestrator.md
         frontend-implementer.md
         backend-implementer.md
         world-builder.md
         reviewer.md
     scripts/
       guard-core.sh              PreToolUse — blocks writes to protected paths
-      guard-supervisor.sh         PreToolUse — bash allowlist for supervisor
+      guard-orchestrator.sh         PreToolUse — bash allowlist for orchestrator
       log-event.sh               PostToolUse — observability logging
       merge-agent.sh             Concatenates base + stack + stub at session start
       loci-start.sh              Wrapper → agent-primitives/scripts/start.sh
@@ -68,7 +68,7 @@ Notes are primary; worlds are atmosphere.
     logs/
       events.jsonl               Append-only structured event log
       observability.db           SQLite — synced from events.jsonl (gitignored)
-      progress.md                Living state doc — supervisor reads/writes each session
+      progress.md                Living state doc — orchestrator reads/writes each session
       archive/                   Session snapshots
       reviews/                   Optimization review reports
     specs/
@@ -98,7 +98,7 @@ Human runs: loci-start.sh
   → Hooks verified
   → Claude Code launched
 
-Supervisor works:
+Orchestrator works:
   → Reads CLAUDE.md, progress.md, spec
   → Calls loci-dispatch.sh to prepare worktrees
   → Dispatches subagents into worktrees
@@ -121,7 +121,7 @@ mechanics (worktrees, IDs, hooks, cleanup).
 
 | Agent | Transformation | Model | Sensitive data |
 |---|---|---|---|
-| supervisor | task → routed agent call | claude-opus-4-6 | false |
+| orchestrator | task → routed agent call | claude-opus-4-6 | false |
 | frontend-implementer | spec-path → frontend code | claude-sonnet-4-6 | false |
 | backend-implementer | spec-path → API code | claude-sonnet-4-6 | false |
 | world-builder | mood/theme → environment JSON | claude-sonnet-4-6 | true |
@@ -133,10 +133,10 @@ All agents conform to agent contract schema v2 (see agent-primitives/schema/agen
 
 ## Dispatch Rules
 
-1. No spec → no dispatch. Supervisor writes spec first.
+1. No spec → no dispatch. Orchestrator writes spec first.
 2. Specialists receive spec file paths only — never freeform descriptions.
 3. Sensitive data (note content) flows only to world-builder.
-4. Reviewer runs after every implementation. Escalates to supervisor on failure.
+4. Reviewer runs after every implementation. Escalates to orchestrator on failure.
 5. Human approval required for all world-builder outputs.
 6. Max 2 retry iterations per agent per spec. Third failure → blocker, human resolves.
 7. Before dispatching, run `loci-dispatch.sh` to prepare the worktree.
@@ -148,8 +148,8 @@ All agents conform to agent contract schema v2 (see agent-primitives/schema/agen
 
 | Directory | Purpose | Workflow |
 |---|---|---|
-| specs/features/ | User-facing capabilities | Supervisor → implementer → reviewer → human headset test |
-| specs/refactors/ | Structural changes | Supervisor → implementer → reviewer |
+| specs/features/ | User-facing capabilities | Orchestrator → implementer → reviewer → human headset test |
+| specs/refactors/ | Structural changes | Orchestrator → implementer → reviewer |
 | specs/optimizations/ | Performance + architecture reviews | Periodic or on-demand, confidence-based autonomy |
 | specs/architecture/ | Contract and agent definition changes | Produces recommendations, human executes |
 
@@ -160,7 +160,7 @@ All agents conform to agent contract schema v2 (see agent-primitives/schema/agen
 guard-core.sh blocks all agent writes to:
 `.claude/`, `ARCHITECTURE.md`, `CLAUDE.md`, `mcp.json`, `agents/`
 
-guard-supervisor.sh restricts supervisor bash to approved scripts and
+guard-orchestrator.sh restricts orchestrator bash to approved scripts and
 read-only commands only.
 
 Agents have full write access to `frontend/`, `backend/`, `specs/`.
@@ -170,14 +170,14 @@ Agents have full write access to `frontend/`, `backend/`, `specs/`.
 ## Git Operations
 
 Agents do all git operations via GitHub MCP with per-role tokens:
-- Supervisor: read-only (repos, PRs, issues)
+- Orchestrator: read-only (repos, PRs, issues)
 - Implementers: read/write code, create PRs (cannot merge)
 - Reviewer: read code, approve/merge PRs (cannot push code)
 - World-builder: no git access
 
 Branch naming: `<agent>-<instance>/<category>/<spec-name>`
 Implementers work in isolated worktrees created by dispatch.sh.
-Scripts/ directory is not visible to any agent except supervisor.
+Scripts/ directory is not visible to any agent except orchestrator.
 
 ---
 
@@ -217,7 +217,7 @@ Do not revisit without explicit human instruction:
 - Every tool call → one JSON line to logs/events.jsonl via log-event.sh
 - Zero tokens — runs outside agent context
 - Agents can read logs/observability.db (read-only). Never modify or delete.
-- Supervisor syncs events at session end via sync-events.sh
+- Orchestrator syncs events at session end via sync-events.sh
 - Dashboard: `./scripts/dashboard.sh` → localhost:3737 (10-min auto-shutdown)
 - Four cost buckets: code_generation, world_building, review, orchestration
 
@@ -233,7 +233,7 @@ Do not revisit without explicit human instruction:
 - GitHub MCP: 3 per-role fine-grained PATs, branch protection via `agentic-main-protection` ruleset
 - Optimization loop designed (template at specs/optimizations/TEMPLATE.md)
 - Observability dashboard designed (agent-primitives/observability/)
-- Scripted infrastructure layer implemented (start.sh, dispatch.sh, end.sh, guard-supervisor.sh)
+- Scripted infrastructure layer implemented (start.sh, dispatch.sh, end.sh, guard-orchestrator.sh)
 - Known bug: log-event.sh field extraction — all fields show "unknown". Debugging in progress.
 - Next action: fix log-event.sh, then run entry sequence via loci-start.sh
 

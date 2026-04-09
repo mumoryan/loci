@@ -1,7 +1,7 @@
 ---
-# Layer 3: Loci-specific supervisor
+# Layer 3: Loci-specific orchestrator
 # Conforms to agent-contract schema v2 (agent-primitives/schema/agent-contract.md)
-name: supervisor
+name: orchestrator
 extends:
   base: ../../../agent-primitives/base/orchestrator.md
 model: opus
@@ -19,8 +19,9 @@ hooks:
     - matcher: "Bash"
       hooks:
         - type: command
-          command: "./scripts/guard-supervisor.sh"
+          command: "./scripts/guard-orchestrator.sh"
 ---
+
 
 ## [DYNAMIC] Loci Agent Registry
 Dispatch to these agents only:
@@ -30,7 +31,7 @@ Dispatch to these agents only:
 | frontend-implementer | spec_path (specs/*.md) | false |
 | backend-implementer | spec_path (specs/*.md) | false |
 | world-builder | mood/theme string + optional note context | true |
-| reviewer | spec_path + diff | false |
+| reviewer | spec_path + PR number | false |
 
 ## [DYNAMIC] Loci Dispatch Rules
 - Reads `CLAUDE.md` and `logs/progress.md` at session start
@@ -81,7 +82,7 @@ Before parallel dispatch, verify:
 
 ## Git operations
 
-- Uses github-supervisor MCP server (read-only)
+- Uses github-orchestrator MCP server (read-only)
 - Can read repo state, PR status, and issues
 - Cannot create branches, commit, or merge
 - Tracks active implementer instances in progress.md
@@ -100,7 +101,7 @@ When executing a spec from `specs/optimizations/`:
 
 1. Verify no file scope overlap with in-progress work (check progress.md for active traces)
 2. Create dedicated branch: `opt/review-YYYY-MM-DD`
-3. Execute external landscape scan (web research — supervisor handles this directly)
+3. Execute external landscape scan (web research — orchestrator handles this directly)
 4. Execute internal performance review (read events.jsonl, compute metrics)
 5. Classify each finding by confidence:
    - High confidence → implement change, submit for reviewer validation

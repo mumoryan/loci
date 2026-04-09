@@ -6,7 +6,7 @@
 # Usage: ./scripts/merge-agent.sh <agent-name>
 # Example: ./scripts/merge-agent.sh frontend-implementer
 #
-# Output: .claude/agents/<agent-name>.merged.md (gitignored)
+# Output: .claude/agents/<agent-name>.md (gitignored — source is .stub.md)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOCI_ROOT="$SCRIPT_DIR/.."
@@ -24,35 +24,39 @@ if [ ! -f "$STUB" ]; then
   exit 1
 fi
 
-# Extract extends fields from stub frontmatter
-BASE_REL=$(grep 'base:' "$STUB" | awk '{print $2}')
-STACK_REL=$(grep 'stack:' "$STUB" | awk '{print $2}')
+# Extract extends fields from stub frontmatter (-m1 = first match only)
+BASE_REL=$(grep -m1 '^\s*base:' "$STUB" | awk '{print $2}')
+STACK_REL=$(grep -m1 '^\s*stack:' "$STUB" | awk '{print $2}')
 
-OUTPUT="$LOCI_ROOT/.claude/agents/${AGENT_NAME}.merged.md"
+TMPFILE="$(mktemp)"
+OUTPUT="$LOCI_ROOT/.claude/agents/${AGENT_NAME}.md"
 
 {
-  # Layer 0+1: base (static — cache eligible)
+  # Stub frontmatter FIRST — Claude Code reads model/description from top of file
+  awk '/^---/{f++; print; next} f==1{print} f==2{exit}' "$STUB"
+  echo ""
+
+  # Layer 0+1: base body (static — cache eligible, frontmatter stripped)
   if [ -n "$BASE_REL" ]; then
     BASE_PATH="$LOCI_ROOT/.claude/agents/$BASE_REL"
     if [ -f "$BASE_PATH" ]; then
-      # Strip frontmatter from base, keep body
-      awk '/^---/{f++; next} f==2{print} f==1' "$BASE_PATH"
+      awk '/^---/{f++; next} f>=2{print}' "$BASE_PATH"
       echo ""
     fi
   fi
 
-  # Layer 2: stack (static — cache eligible)
+  # Layer 2: stack body (static — cache eligible, frontmatter stripped)
   if [ -n "$STACK_REL" ]; then
     STACK_PATH="$LOCI_ROOT/.claude/agents/$STACK_REL"
     if [ -f "$STACK_PATH" ]; then
-      awk '/^---/{f++; next} f==2{print} f==1' "$STACK_PATH"
+      awk '/^---/{f++; next} f>=2{print}' "$STACK_PATH"
       echo ""
     fi
   fi
 
-  # Layer 3: stub frontmatter + dynamic body (last — not cached)
-  cat "$STUB"
+  # Layer 3: stub body only (frontmatter already output above)
+  awk '/^---/{f++; next} f>=2{print}' "$STUB"
 
-} > "$OUTPUT"
+} > "$TMPFILE" && mv "$TMPFILE" "$OUTPUT"
 
 echo "Merged: $OUTPUT"
