@@ -38,22 +38,22 @@ every agent file must follow.
 
 # === IDENTITY ===
 name: string                          # [required] unique agent identifier
-transformation: string                # [required] "input → output" — supervisor routing signal
+transformation: string                # [required] "input → output" — orchestrator routing signal
 model: string                         # [required] model identifier
 cost_bucket: enum                     # [required] orchestration | code_generation | world_building | review
 
 # === TRIGGER ===
 trigger_type: on_demand | periodic    # [required] default: on_demand
 periodic_cadence: string | null       # [optional] e.g. "weekly" — only if trigger_type is periodic
-trigger_source: supervisor | human | schedule  # [optional] who/what initiates — default: supervisor
+trigger_source: orchestrator | human | schedule  # [optional] who/what initiates — default: orchestrator
 
 # === INPUT CONTRACT ===
 input:
-  type: string                        # [required] semantic label for what supervisor passes
-  schema:                             # [required] typed fields — supervisor validates before dispatch
+  type: string                        # [required] semantic label for what orchestrator passes
+  schema:                             # [required] typed fields — orchestrator validates before dispatch
     field_name: type                  #   at minimum one field
   sensitive_data: boolean             # [required] can this agent receive sensitive content (e.g. note text)?
-  validation: string                  # [required] human-readable rule supervisor checks before dispatch
+  validation: string                  # [required] human-readable rule orchestrator checks before dispatch
 
 # === OUTPUT CONTRACT ===
 output:
@@ -73,7 +73,7 @@ tools:                                # [required] explicit allowlist — least 
 
 # === EXECUTION ===
 execution:
-  max_retries: integer                # [required] per spec, before escalation to supervisor/human
+  max_retries: integer                # [required] per spec, before escalation to orchestrator/human
   parallel: boolean                   # [optional] can multiple instances run simultaneously? default: false
   file_scope: string[]                # [required] directories this agent may write to
   protected_paths: string[]           # [optional] explicit deny list — enforced by guard-core.sh
@@ -112,10 +112,10 @@ YAML frontmatter to match the schema. If existing content maps cleanly to a
 schema field, use it. If a field has no existing value, use the values specified
 below.
 
-### supervisor (agent-primitives/base/orchestrator.md)
+### orchestrator (agent-primitives/base/orchestrator.md)
 
 ```yaml
-name: supervisor
+name: orchestrator
 transformation: "task → routed agent call"
 model: claude-opus-4-6
 cost_bucket: orchestration
@@ -129,7 +129,7 @@ input:
     task: string
     spec_path: string | null
   sensitive_data: false
-  validation: "If task requires implementation, a spec file must exist or supervisor creates one first"
+  validation: "If task requires implementation, a spec file must exist or orchestrator creates one first"
 
 output:
   type: dispatch_result
@@ -160,7 +160,7 @@ execution:
 
 security:
   injection_surface: "task description from human — trusted"
-  sanitisation: "supervisor strips sensitive content before dispatching to non-sensitive agents"
+  sanitisation: "orchestrator strips sensitive content before dispatching to non-sensitive agents"
 ```
 
 ### frontend-implementer (agent-primitives/base/spec-to-code.md)
@@ -177,7 +177,7 @@ model: claude-sonnet-4-6
 cost_bucket: code_generation
 
 trigger_type: on_demand
-trigger_source: supervisor
+trigger_source: orchestrator
 
 input:
   type: spec_path
@@ -240,7 +240,7 @@ model: claude-sonnet-4-6
 cost_bucket: world_building
 
 trigger_type: on_demand
-trigger_source: supervisor
+trigger_source: orchestrator
 
 input:
   type: mood_or_theme
@@ -278,7 +278,7 @@ execution:
 
 security:
   injection_surface: "note_context — contains user-authored personal content"
-  sanitisation: "note content validated at MCP layer post-PoC; PoC phase: supervisor strips injection patterns before dispatch"
+  sanitisation: "note content validated at MCP layer post-PoC; PoC phase: orchestrator strips injection patterns before dispatch"
 ```
 
 ### reviewer (agent-primitives/base/reviewer.md)
@@ -290,7 +290,7 @@ model: claude-haiku-4-5-20251001
 cost_bucket: review
 
 trigger_type: on_demand
-trigger_source: supervisor
+trigger_source: orchestrator
 
 input:
   type: spec_path_and_diff
@@ -392,7 +392,7 @@ Override `file_scope` to `["frontend/src/worlds/"]`. Add Loci constraint:
 - Output must conform to `WorldDiff` type (once defined)
 - Hokkaido mansion is the default world reference
 
-### loci/.claude/agents/supervisor.md
+### loci/.claude/agents/orchestrator.md
 
 Add to body text:
 - Reads `CLAUDE.md` and `logs/progress.md` at session start

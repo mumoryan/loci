@@ -38,7 +38,7 @@ explicit in every script.
 | Script | Purpose | Invoked by | When |
 |---|---|---|---|
 | `start.sh` | Session bootstrap, prereqs, ID generation, hook verification | Human | Before Claude starts |
-| `dispatch.sh` | Create worktree for agent instance | Supervisor (via bash) | Before dispatching subagent |
+| `dispatch.sh` | Create worktree for agent instance | Orchestrator (via bash) | Before dispatching subagent |
 | `end.sh` | Teardown, log sync, worktree cleanup, archive | Human | After Claude exits |
 
 Note: PR creation, review, approval, and merge remain with agents via GitHub
@@ -175,7 +175,7 @@ dispatched into the worktree.
 # Example: dispatch.sh ~/Dev/loci frontend-implementer 1 features entry-sequence
 #
 # Creates: <project-dir>/worktrees/<agent-name>-<instance>/
-# The supervisor calls this before dispatching a subagent.
+# The orchestrator calls this before dispatching a subagent.
 
 set -e
 
@@ -221,7 +221,7 @@ git worktree add "$WORKTREE_DIR" -b "$BRANCH" main
 
 # --- Set up sparse checkout per agent type ---
 # Each agent only sees the directories it needs.
-# scripts/ is excluded from all agents — only supervisor (main checkout) can see them.
+# scripts/ is excluded from all agents — only orchestrator (main checkout) can see them.
 
 cd "$WORKTREE_DIR"
 git sparse-checkout init --cone 2>/dev/null || true
@@ -261,7 +261,7 @@ EOF
 echo ""
 echo "=== Worktree ready ==="
 echo "Agent env written to: $ENV_FILE"
-echo "Supervisor: dispatch subagent to work in $WORKTREE_DIR"
+echo "Orchestrator: dispatch subagent to work in $WORKTREE_DIR"
 echo "Agent should: source .agent-env, then implement spec"
 echo ""
 ```
@@ -348,19 +348,19 @@ echo ""
 
 ---
 
-## Part 3.5: guard-supervisor.sh
+## Part 3.5: guard-orchestrator.sh
 
-Create `agent-primitives/scripts/guard-supervisor.sh`:
+Create `agent-primitives/scripts/guard-orchestrator.sh`:
 
-A PreToolUse hook registered only on the supervisor agent. Restricts bash
+A PreToolUse hook registered only on the orchestrator agent. Restricts bash
 to an allowlist of approved scripts and read-only commands. Implementers
 don't need this because they can't see `scripts/` at all (sparse checkout).
 
 ```bash
 #!/bin/bash
-# guard-supervisor.sh — PreToolUse hook for supervisor agent only
+# guard-orchestrator.sh — PreToolUse hook for orchestrator agent only
 # Restricts Bash to approved infrastructure scripts and read-only commands.
-# Registered in the supervisor's agent stub, not globally.
+# Registered in the orchestrator's agent stub, not globally.
 
 INPUT=$(cat)
 TOOL=$(echo "$INPUT" | jq -r '.tool_name // ""')
@@ -372,7 +372,7 @@ fi
 
 COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // ""')
 
-# Allowlist: infrastructure scripts the supervisor may invoke
+# Allowlist: infrastructure scripts the orchestrator may invoke
 ALLOWED_SCRIPTS="scripts/loci-dispatch\.sh|scripts/loci-start\.sh|scripts/loci-end\.sh|scripts/sync-events\.sh|scripts/dashboard\.sh"
 
 # Allowlist: read-only commands for inspecting state
@@ -388,16 +388,16 @@ elif echo "$COMMAND" | grep -qE "$ALLOWED_READONLY"; then
 elif echo "$COMMAND" | grep -qE "$ALLOWED_SOURCE"; then
   exit 0  # sourcing agent env
 else
-  echo "Blocked: supervisor bash restricted to approved scripts and read-only commands" >&2
+  echo "Blocked: orchestrator bash restricted to approved scripts and read-only commands" >&2
   echo "Attempted: $COMMAND" >&2
   exit 2  # hard block
 fi
 ```
 
-### Register in supervisor stub only
+### Register in orchestrator stub only
 
-Update `loci/.claude/agents/supervisor.md` frontmatter to include
-guard-supervisor.sh as a PreToolUse hook in addition to the global
+Update `loci/.claude/agents/orchestrator.md` frontmatter to include
+guard-orchestrator.sh as a PreToolUse hook in addition to the global
 guard-core.sh:
 
 ```yaml
@@ -410,28 +410,28 @@ hooks:
     - matcher: "Bash"
       hooks:
         - type: command
-          command: "./scripts/guard-supervisor.sh"
+          command: "./scripts/guard-orchestrator.sh"
 ```
 
 Create the Loci wrapper:
 
-### loci/scripts/guard-supervisor.sh
+### loci/scripts/guard-orchestrator.sh
 
 ```bash
 #!/bin/bash
-# Wrapper: supervisor bash guard for Loci
+# Wrapper: orchestrator bash guard for Loci
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-exec "$PROJECT_DIR/../agent-primitives/scripts/guard-supervisor.sh"
+exec "$PROJECT_DIR/../agent-primitives/scripts/guard-orchestrator.sh"
 ```
 
-Must be executable: `chmod +x loci/scripts/guard-supervisor.sh`
+Must be executable: `chmod +x loci/scripts/guard-orchestrator.sh`
 
 ### Defense summary
 
 | Agent | Can see scripts/? | Bash restricted? | Enforcement |
 |---|---|---|---|
-| supervisor | Yes (main checkout) | Yes — allowlist only | guard-supervisor.sh |
+| orchestrator | Yes (main checkout) | Yes — allowlist only | guard-orchestrator.sh |
 | frontend-implementer | No (sparse checkout) | No restriction needed | Filesystem isolation |
 | backend-implementer | No (sparse checkout) | No restriction needed | Filesystem isolation |
 | world-builder | No (sparse checkout) | No restriction needed | Filesystem isolation |
@@ -478,9 +478,9 @@ All wrappers must be executable: `chmod +x loci/scripts/loci-*.sh`
 
 ---
 
-## Part 5: Update supervisor stub
+## Part 5: Update orchestrator stub
 
-Add to `loci/.claude/agents/supervisor.md` body text:
+Add to `loci/.claude/agents/orchestrator.md` body text:
 
 ```markdown
 ## Session infrastructure
@@ -541,7 +541,7 @@ path. See any project's `scripts/` directory for examples.
 # Start session (replaces running `claude` directly)
 ./scripts/loci-start.sh
 
-# Inside Claude — supervisor prepares worktrees before dispatch
+# Inside Claude — orchestrator prepares worktrees before dispatch
 bash scripts/loci-dispatch.sh frontend-implementer 1 features entry-sequence
 
 # After Claude exits
@@ -593,14 +593,14 @@ worktrees/
 - [ ] `agent-primitives/scripts/start.sh` exists and is executable
 - [ ] `agent-primitives/scripts/dispatch.sh` exists and is executable
 - [ ] `agent-primitives/scripts/end.sh` exists and is executable
-- [ ] `agent-primitives/scripts/guard-supervisor.sh` exists and is executable
+- [ ] `agent-primitives/scripts/guard-orchestrator.sh` exists and is executable
 - [ ] `loci/scripts/loci-start.sh` wrapper exists and is executable
 - [ ] `loci/scripts/loci-dispatch.sh` wrapper exists and is executable
 - [ ] `loci/scripts/loci-end.sh` wrapper exists and is executable
-- [ ] `loci/scripts/guard-supervisor.sh` wrapper exists and is executable
+- [ ] `loci/scripts/guard-orchestrator.sh` wrapper exists and is executable
 - [ ] `dispatch.sh` uses per-agent sparse checkout (no scripts/ for implementers/world-builder)
-- [ ] Supervisor stub has guard-supervisor.sh registered as PreToolUse hook for Bash
-- [ ] Supervisor stub updated with session infrastructure and dispatch instructions
+- [ ] Orchestrator stub has guard-orchestrator.sh registered as PreToolUse hook for Bash
+- [ ] Orchestrator stub updated with session infrastructure and dispatch instructions
 - [ ] `agent-primitives/README.md` updated with infrastructure scripts section
 - [ ] `loci/README.md` updated with session lifecycle section
 - [ ] `worktrees/` added to `loci/.gitignore`

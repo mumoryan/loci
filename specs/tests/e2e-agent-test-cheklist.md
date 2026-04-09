@@ -28,11 +28,11 @@ chmod +x scripts/*.sh
 
 # 4. Confirm MCP servers connected
 claude mcp list
-# Expected: github-supervisor, github-implementer, github-reviewer all show ✓ Connected
+# Expected: github-orchestrator, github-implementer, github-reviewer all show ✓ Connected
 
 # 5. Confirm agent stubs exist
 ls .claude/agents/
-# Expected: supervisor.md, frontend-implementer.md, backend-implementer.md,
+# Expected: orchestrator.md, frontend-implementer.md, backend-implementer.md,
 #           world-builder.md, reviewer.md
 
 # 6. Confirm entry sequence spec exists
@@ -62,25 +62,25 @@ claude
 In the Claude Code session:
 
 ```
-Use the supervisor agent to implement specs/features/entry-sequence.md
+Use the orchestrator agent to implement specs/features/entry-sequence.md
 ```
 
 Do NOT intervene. Let it run to completion or failure.
 
 ---
 
-## Verify: Supervisor dispatch
+## Verify: Orchestrator dispatch
 
 | # | Check | How to verify | Pass/Fail |
 | --- | --- | --- | --- |
-| S1 | Supervisor read [CLAUDE.md](http://claude.md/) | Look for [CLAUDE.md](http://claude.md/) in Claude Code's file reads at session start |  |
-| S2 | Supervisor read [progress.md](http://progress.md/) | Look for [progress.md](http://progress.md/) in file reads |  |
-| S3 | Supervisor read entry-sequence spec | Look for specs/features/entry-sequence.md in file reads |  |
-| S4 | Supervisor delegated to frontend-implementer | Look for subagent invocation in Claude Code output — should see "Agent" tool call |  |
-| S5 | Supervisor passed spec path, not freeform text | Check the subagent invocation — input should reference the spec file path |  |
-| S6 | Supervisor did NOT write code itself | No writes to frontend/src/ by the supervisor — only by the subagent |  |
+| S1 | Orchestrator read [CLAUDE.md](http://claude.md/) | Look for [CLAUDE.md](http://claude.md/) in Claude Code's file reads at session start |  |
+| S2 | Orchestrator read [progress.md](http://progress.md/) | Look for [progress.md](http://progress.md/) in file reads |  |
+| S3 | Orchestrator read entry-sequence spec | Look for specs/features/entry-sequence.md in file reads |  |
+| S4 | Orchestrator delegated to frontend-implementer | Look for subagent invocation in Claude Code output — should see "Agent" tool call |  |
+| S5 | Orchestrator passed spec path, not freeform text | Check the subagent invocation — input should reference the spec file path |  |
+| S6 | Orchestrator did NOT write code itself | No writes to frontend/src/ by the orchestrator — only by the subagent |  |
 
-**If S4 fails (supervisor does the work itself):** This is the most likely failure. Note what happened and stop — the supervisor stub's description field may need tuning to trigger proper delegation.
+**If S4 fails (orchestrator does the work itself):** This is the most likely failure. Note what happened and stop — the orchestrator stub's description field may need tuning to trigger proper delegation.
 
 ---
 
@@ -108,7 +108,7 @@ Do NOT intervene. Let it run to completion or failure.
 
 | # | Check | How to verify | Pass/Fail |
 | --- | --- | --- | --- |
-| R1 | Reviewer was invoked by supervisor | Look for second subagent invocation in Claude Code output after implementer completed |  |
+| R1 | Reviewer was invoked by orchestrator | Look for second subagent invocation in Claude Code output after implementer completed |  |
 | R2 | Reviewer read the PR diff | Check Claude Code output — reviewer should reference specific files/changes |  |
 | R3 | Reviewer checked spec acceptance criteria | Reviewer output should reference criteria from [entry-sequence.md](http://entry-sequence.md/) |  |
 | R4 | Reviewer checked [ARCHITECTURE.md](http://architecture.md/) constraints | Reviewer output should mention rendering budget, material types, or other constraints |  |
@@ -116,7 +116,7 @@ Do NOT intervene. Let it run to completion or failure.
 | R6 | If approved: reviewer merged the PR | PR status on GitHub should be "Merged" |  |
 | R7 | If rejected: implementer retried | Look for second implementer invocation in Claude Code output |  |
 
-**If R1 fails (reviewer never invoked):** Supervisor did not route to reviewer after implementation. This means the supervisor's dispatch logic is incomplete — it finished after implementer instead of continuing the pipeline.
+**If R1 fails (reviewer never invoked):** Orchestrator did not route to reviewer after implementation. This means the orchestrator's dispatch logic is incomplete — it finished after implementer instead of continuing the pipeline.
 
 **If R6 fails (approved but not merged):** Reviewer may not have invoked `github_merge` MCP tool, or branch protection blocked the merge. Check PR status on GitHub for details.
 
@@ -175,11 +175,11 @@ cp logs/events.jsonl logs/events-test-run-1.jsonl
 
 | Issue | Likely cause | Fix |
 | --- | --- | --- |
-| Supervisor does work itself | Description field doesn't trigger delegation | Tune supervisor stub description to be more explicit about routing |
+| Orchestrator does work itself | Description field doesn't trigger delegation | Tune orchestrator stub description to be more explicit about routing |
 | No GitHub MCP usage | Subagents may not inherit MCP tools if tools field is restrictive | Ensure stubs don't have a `tools:` allowlist that excludes MCP |
-| Reviewer never triggered | Supervisor pipeline stops after implementer | Add explicit instruction in supervisor stub to route to reviewer after implementation |
+| Reviewer never triggered | Orchestrator pipeline stops after implementer | Add explicit instruction in orchestrator stub to route to reviewer after implementation |
 | Hook fields show "unknown" | [log-event.sh](http://log-event.sh/) field names don't match Claude Code's payload | Capture raw payload, update field names in script |
-| [merge-agent.sh](http://merge-agent.sh/) not run | Base agent context not loaded | Check if supervisor reads base agent via relative path |
+| [merge-agent.sh](http://merge-agent.sh/) not run | Base agent context not loaded | Check if orchestrator reads base agent via relative path |
 | Branch naming wrong | Implementer ignores naming convention | Check stub, make naming more explicit |
 
 ---

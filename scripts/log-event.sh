@@ -27,7 +27,7 @@ TOOL_TYPE="raw"
 
 # Determine cost bucket from agent name
 case "$AGENT" in
-  *supervisor*)    COST_BUCKET="orchestration" ;;
+  *orchestrator*)    COST_BUCKET="orchestration" ;;
   *frontend*)      COST_BUCKET="code_generation" ;;
   *backend*)       COST_BUCKET="code_generation" ;;
   *world-builder*) COST_BUCKET="world_building" ;;

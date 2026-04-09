@@ -18,8 +18,8 @@ echo ""
 
 # Load GitHub PATs from Keychain
 echo "=== Loading GitHub PATs from Keychain ==="
-export GITHUB_ORCHESTRATOR_PAT=$(security find-generic-password -a loci -s github-supervisor-pat -w 2>/dev/null) \
-  || { echo "FAIL: github-supervisor-pat not found in Keychain"; exit 1; }
+export GITHUB_ORCHESTRATOR_PAT=$(security find-generic-password -a loci -s github-orchestrator-pat -w 2>/dev/null) \
+  || { echo "FAIL: github-orchestrator-pat not found in Keychain"; exit 1; }
 export GITHUB_IMPLEMENTER_PAT=$(security find-generic-password -a loci -s github-implementer-pat -w 2>/dev/null) \
   || { echo "FAIL: github-implementer-pat not found in Keychain"; exit 1; }
 export GITHUB_REVIEWER_PAT=$(security find-generic-password -a loci -s github-reviewer-pat -w 2>/dev/null) \

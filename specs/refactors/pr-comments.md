@@ -71,11 +71,11 @@ Add to git workflow section:
 - [ ] spec-to-code.md has github_comment tool in tools section
 - [ ] reviewer.md has github_comment tool in tools section
 - [ ] All three Loci stubs (frontend-implementer, backend-implementer, reviewer) updated
-- [ ] No comment capability added to supervisor or world-builder
+- [ ] No comment capability added to orchestrator or world-builder
 - [ ] Changes committed on branch `refactor/pr-comments`
 
 ## What NOT to change
 
-- Do not modify supervisor or world-builder agents
+- Do not modify orchestrator or world-builder agents
 - Do not modify ARCHITECTURE.md or CLAUDE.md
 - Do not modify guard-core.sh or log-event.sh

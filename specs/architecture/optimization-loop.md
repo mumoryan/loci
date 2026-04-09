@@ -156,16 +156,16 @@ optimization loop uses the existing schema as-is:
 ```yaml
 trigger_type: periodic
 periodic_cadence: "weekly"
-trigger_source: supervisor | human | schedule
+trigger_source: orchestrator | human | schedule
 ```
 
 Verify these fields exist in the schema. If they don't (check first), add them.
 
 ---
 
-## Part 4: Create the supervisor dispatch extension
+## Part 4: Create the orchestrator dispatch extension
 
-Add to the supervisor's Loci stub (`loci/.claude/agents/supervisor.md`) the
+Add to the orchestrator's Loci stub (`loci/.claude/agents/orchestrator.md`) the
 following dispatch rules for optimization specs. Add these as body text
 below the existing content — do not replace existing dispatch rules:
 
@@ -176,7 +176,7 @@ When executing a spec from `specs/optimizations/`:
 
 1. Verify no file scope overlap with in-progress work (check progress.md for active traces)
 2. Create dedicated branch: `opt/review-YYYY-MM-DD`
-3. Execute external landscape scan (web research — supervisor handles this directly)
+3. Execute external landscape scan (web research — orchestrator handles this directly)
 4. Execute internal performance review (read events.jsonl, compute metrics)
 5. Classify each finding by confidence:
    - High confidence → implement change, submit for reviewer validation
@@ -200,7 +200,7 @@ Add an `## Optimization Reviews` section to `logs/progress.md` that tracks:
 |---|---|---|---|---|---|
 ```
 
-This table is updated by the supervisor after each optimization cycle.
+This table is updated by the orchestrator after each optimization cycle.
 
 ---
 
@@ -209,7 +209,7 @@ This table is updated by the supervisor after each optimization cycle.
 - [ ] `specs/optimizations/TEMPLATE.md` exists with all sections
 - [ ] `logs/reviews/` directory exists with `.gitkeep`
 - [ ] Agent contract schema verified to include trigger fields
-- [ ] Supervisor stub updated with optimization dispatch rules
+- [ ] Orchestrator stub updated with optimization dispatch rules
 - [ ] `logs/progress.md` updated with optimization reviews tracking section
 - [ ] No changes to ARCHITECTURE.md, CLAUDE.md, or guard-core.sh
 - [ ] Changes committed on branch `arch/optimization-loop`
@@ -219,6 +219,6 @@ This table is updated by the supervisor after each optimization cycle.
 - Do not modify ARCHITECTURE.md or CLAUDE.md — human-authored
 - Do not modify guard-core.sh or log-event.sh
 - Do not modify any base agent files in agent-primitives/base/
-- Do not create a new agent — the supervisor handles optimization dispatch
+- Do not create a new agent — the orchestrator handles optimization dispatch
 - Do not implement email delivery — for now reports land as markdown files
 - Do not run an actual optimization review — this spec sets up the process only
