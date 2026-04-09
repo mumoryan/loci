@@ -92,17 +92,17 @@ The schema does not change.
 
 | Agent | Transformation | Model | Sensitive data |
 |---|---|---|---|
-| supervisor | task → routed agent call | claude-opus-4-6 | false |
+| orchestrator | task → routed agent call | claude-opus-4-6 | false |
 | frontend-implementer | spec-path → frontend code | claude-sonnet-4-6 | false |
 | backend-implementer | spec-path → API code | claude-sonnet-4-6 | false |
 | world-builder | mood/theme → environment JSON | claude-sonnet-4-6 | true |
 | reviewer | diff + spec → validation result | claude-haiku-4-5-20251001 | false |
 
 ### Dispatch rules
-1. No spec → no dispatch. Supervisor writes spec first.
+1. No spec → no dispatch. Orchestrator writes spec first.
 2. Specialists receive spec file paths only — never freeform descriptions.
 3. Sensitive data (note content) flows only to world-builder, stripped from all others.
-4. Reviewer runs after every implementation. Escalates failures to supervisor.
+4. Reviewer runs after every implementation. Escalates failures to orchestrator.
 5. Human approval required for all world-builder outputs.
 
 ### Protected paths (guard-core.sh blocks all agent writes)
@@ -110,7 +110,7 @@ The schema does not change.
 
 ### Observability
 - Every tool call → one line appended to `logs/events.jsonl`
-- Supervisor reads/writes `logs/progress.md` each session
+- Orchestrator reads/writes `logs/progress.md` each session
 - SQLite dashboard synced from events.jsonl on session end
 
 ---

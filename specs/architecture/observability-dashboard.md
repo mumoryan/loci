@@ -164,7 +164,7 @@ The script accepts PROJECT_DIR as an argument so it works for any project.
 #!/bin/bash
 # Syncs logs/events.jsonl into logs/observability.db (SQLite)
 # Reusable across projects — pass project root as argument.
-# Run: at end of each supervisor session + on demand by human
+# Run: at end of each orchestrator session + on demand by human
 # Usage: ./sync-events.sh <project-dir>
 
 set -euo pipefail
@@ -481,9 +481,9 @@ Both must be executable: `chmod +x loci/scripts/sync-events.sh loci/scripts/dash
 
 ---
 
-## Part 4: Update supervisor dispatch
+## Part 4: Update orchestrator dispatch
 
-Add to `loci/.claude/agents/supervisor.md` body text:
+Add to `loci/.claude/agents/orchestrator.md` body text:
 
 ```markdown
 ## Observability
@@ -565,7 +565,7 @@ logs/observability.db
 - [ ] `loci/scripts/sync-events.sh` wrapper exists and is executable
 - [ ] `loci/scripts/dashboard.sh` wrapper exists and is executable
 - [ ] `logs/observability.db` is in `loci/.gitignore`
-- [ ] Supervisor stub updated with observability section
+- [ ] Orchestrator stub updated with observability section
 - [ ] Both READMEs updated with observability documentation
 - [ ] Changes committed on branch `arch/observability-dashboard` in both repos
 

@@ -1,7 +1,7 @@
 # Loci — Session 03 Summary
 **Type:** Architecture design + scaffold  
 **Status:** Complete — ready for first agent run  
-**Next step:** Run entry sequence spec via supervisor agent in Claude Code
+**Next step:** Run entry sequence spec via orchestrator agent in Claude Code
 
 ---
 
@@ -48,7 +48,7 @@ Agents are defined by their **transformation**, not their job title:
 
 | Agent | Transformation | Model | Sensitive data |
 |---|---|---|---|
-| supervisor | task → routed agent call | claude-opus-4-6 | false |
+| orchestrator | task → routed agent call | claude-opus-4-6 | false |
 | frontend-implementer | spec-path → frontend code | claude-sonnet-4-6 | false |
 | backend-implementer | spec-path → API code | claude-sonnet-4-6 | false |
 | world-builder | mood/theme → environment JSON | claude-sonnet-4-6 | true |
@@ -60,14 +60,14 @@ World-builder outputs always require human approval before application.
 
 ### 3. Input contract enforcement
 
-Specialists accept exactly one input type. The supervisor enforces this before
+Specialists accept exactly one input type. The orchestrator enforces this before
 dispatch:
 
 - `frontend-implementer` / `backend-implementer`: spec file path only
 - `world-builder`: mood/theme string (+ optional note context)
 - `code-reviewer`: spec path + files_written[]
 
-A spec must exist before any implementation task is dispatched. The supervisor
+A spec must exist before any implementation task is dispatched. The orchestrator
 writes the spec if it doesn't exist — it never passes freeform descriptions
 to specialist agents.
 
@@ -109,7 +109,7 @@ PostToolUse hooks yet. Schema is ready for when this becomes available.
 
 ### 6. Progress artifact
 
-`logs/progress.md` is the living state document the supervisor reads and
+`logs/progress.md` is the living state document the orchestrator reads and
 writes each session. Survives context window resets. Contains:
 
 - Current trace ID, feature, status
@@ -154,7 +154,7 @@ use case (RAG-centric). Not relevant for development agent orchestration.
 
 Architecture supports multiple simultaneous instances of the same agent type
 (e.g. two frontend-implementers in parallel). Pre-conditions enforced by
-supervisor: distinct spec files, non-overlapping file scopes. File lock
+orchestrator: distinct spec files, non-overlapping file scopes. File lock
 tracking added to `progress.md` when parallel dispatch is used.
 
 ---
@@ -180,7 +180,7 @@ tracking added to `progress.md` when parallel dispatch is used.
       CLAUDE.md            Project memory
       settings.json        Hook config (PreToolUse + PostToolUse)
       agents/              Layer 3 stubs
-        supervisor.md
+        orchestrator.md
         frontend-implementer.md
         backend-implementer.md
         world-builder.md
@@ -220,7 +220,7 @@ tracking added to `progress.md` when parallel dispatch is used.
       in specs and agent contracts but not yet written. Needed before world
       building work begins.
 - [ ] **Agent contract schema v2** — add parallel dispatch policy and file lock
-      tracking to supervisor stub.
+      tracking to orchestrator stub.
 
 ### Post-PoC
 - [ ] Migrate high-risk operations to MCP tools (DB, git, note content access)
@@ -236,10 +236,10 @@ tracking added to `progress.md` when parallel dispatch is used.
 Open Claude Code in `~/Development/loci-root/loci/` and run:
 
 ```
-Use the supervisor agent to implement specs/entry-sequence.md
+Use the orchestrator agent to implement specs/entry-sequence.md
 ```
 
-The supervisor will:
+The orchestrator will:
 1. Read CLAUDE.md and logs/progress.md
 2. Validate the spec exists
 3. Dispatch to frontend-implementer with spec path

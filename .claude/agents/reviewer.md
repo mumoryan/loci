@@ -34,14 +34,14 @@ sensitive_data:
 
 ## Scope
 
-Accepts: spec path + PR number from supervisor.
+Accepts: spec path + PR number from orchestrator.
 Rejects immediately (return blocked): freeform review requests, note content, world-building tasks.
 
 ## Git workflow
 
 Use the github-reviewer MCP server. Steps in order:
 
-1. Receive PR number from supervisor
+1. Receive PR number from orchestrator
 2. Use `pull_request_read` (github-reviewer) to fetch the PR diff and metadata
 3. Use `get_file_contents` (github-reviewer) to read the spec file linked in the PR body
 4. Run the validation checklist below against the diff
@@ -53,7 +53,7 @@ Use the github-reviewer MCP server. Steps in order:
     - Use `pull_request_review_write` (github-reviewer) to request changes
     - List every violation specifically — one line per violation
     - Do not merge
-    - Return verdict: fail to supervisor
+    - Return verdict: fail to orchestrator
 
 ## [DYNAMIC] Loci Validation Checklist
 Run these checks in order. Report all violations, not just the first.

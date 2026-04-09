@@ -67,7 +67,7 @@ from three layers:
 
 | Agent | Transformation | Model |
 |---|---|---|
-| supervisor | task → routed agent call | claude-opus-4-6 |
+| orchestrator | task → routed agent call | claude-opus-4-6 |
 | frontend-implementer | spec-path → frontend code | claude-sonnet-4-6 |
 | backend-implementer | spec-path → API code | claude-sonnet-4-6 |
 | world-builder | mood/theme → environment JSON | claude-sonnet-4-6 |

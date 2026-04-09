@@ -25,7 +25,7 @@ Maximum parallel implementer instances: 5.
 ## Part 1: GitHub PATs — COMPLETED MANUALLY
 
 Three fine-grained PATs created and stored securely:
-- `GITHUB_PAT_AGENTIC_AI_SUPERVISOR` — read-only (Contents Read, PRs Read, Issues Read)
+- `GITHUB_PAT_AGENTIC_AI_ORCHESTRATOR` — read-only (Contents Read, PRs Read, Issues Read)
 - `GITHUB_PAT_AGENTIC_AI_IMPLEMENTER` — read/write code, create PRs (Contents R+W, PRs R+W, Issues Read)
 - `GITHUB_PAT_AGENTIC_AI_REVIEWER` — read code, approve/merge PRs (Contents Read, PRs R+W, Issues Read)
 - World-builder has no token. Intentional.
@@ -40,20 +40,20 @@ Permission separation enforced at token level:
 
 Three MCP server instances registered in Claude Code (local project scope).
 PATs are stored in macOS Keychain (never in code or committed config):
-- Keychain service names: `github-supervisor-pat`, `github-implementer-pat`, `github-reviewer-pat` (account: `loci`)
-- MCP headers use `${GITHUB_SUPERVISOR_PAT}`, `${GITHUB_IMPLEMENTER_PAT}`, `${GITHUB_REVIEWER_PAT}`
+- Keychain service names: `github-orchestrator-pat`, `github-implementer-pat`, `github-reviewer-pat` (account: `loci`)
+- MCP headers use `${GITHUB_ORCHESTRATOR_PAT}`, `${GITHUB_IMPLEMENTER_PAT}`, `${GITHUB_REVIEWER_PAT}`
 - `loci-start.sh` loads PATs from Keychain and exports them before launching Claude
 - Claude Code interpolates env vars into HTTP headers at connection time
 
 Servers:
-- `github-supervisor` — env var `GITHUB_SUPERVISOR_PAT`
+- `github-orchestrator` — env var `GITHUB_ORCHESTRATOR_PAT`
 - `github-implementer` — env var `GITHUB_IMPLEMENTER_PAT`
 - `github-reviewer` — env var `GITHUB_REVIEWER_PAT`
 
 To re-register (e.g. after machine reset):
 ```sh
-claude mcp add --transport http github-supervisor https://api.githubcopilot.com/mcp \
-  --header "Authorization: Bearer \${GITHUB_SUPERVISOR_PAT}"
+claude mcp add --transport http github-orchestrator https://api.githubcopilot.com/mcp \
+  --header "Authorization: Bearer \${GITHUB_ORCHESTRATOR_PAT}"
 # repeat for implementer and reviewer
 ```
 
@@ -69,7 +69,7 @@ to the `execution` section:
   max_parallel_instances: integer | null  # [optional] max simultaneous instances. default: 5. Project stubs can override.
 ```
 
-This field is checked by the supervisor before dispatch. If active instances
+This field is checked by the orchestrator before dispatch. If active instances
 of the agent type (tracked in progress.md) plus requested new instances
 exceed this limit, excess instances are queued.
 
@@ -77,7 +77,7 @@ exceed this limit, excess instances are queued.
 
 ## Part 4: Update base agent contracts
 
-### orchestrator.md (supervisor)
+### orchestrator.md (orchestrator)
 
 Update the tools section to include GitHub MCP:
 
@@ -94,7 +94,7 @@ tools:
   - name: github_read
     type: mcp
     scope: "read repos, read PRs, read issues"
-    server: github-supervisor
+    server: github-orchestrator
 ```
 
 ### spec-to-code.md (implementers)
@@ -166,14 +166,14 @@ No changes. Confirm no github tools are present. Add explicit comment:
 
 ## Part 5: Update Loci agent stubs
 
-### loci/.claude/agents/supervisor.md
+### loci/.claude/agents/orchestrator.md
 
 Add to body text:
 
 ```markdown
 ## Git operations
 
-- Uses github-supervisor MCP server (read-only)
+- Uses github-orchestrator MCP server (read-only)
 - Can read repo state, PR status, and issues
 - Cannot create branches, commit, or merge
 - Tracks active implementer instances in progress.md
@@ -190,7 +190,7 @@ Add to body text:
 - Uses github-implementer MCP server
 - Branch naming: `frontend-implementer-{n}/features/{spec-name}` or
   `frontend-implementer-{n}/refactors/{spec-name}` (match spec category)
-- {n} is the instance number (1-5), assigned by supervisor at dispatch
+- {n} is the instance number (1-5), assigned by orchestrator at dispatch
 - Commit messages: `feat({scope}): {description}` or `refactor({scope}): {description}`
 - Create PR on completion with spec file linked in description
 - PR title: `[frontend-implementer-{n}] {spec title}`
@@ -207,7 +207,7 @@ Add to body text:
 - Uses github-implementer MCP server
 - Branch naming: `backend-implementer-{n}/features/{spec-name}` or
   `backend-implementer-{n}/refactors/{spec-name}` (match spec category)
-- {n} is the instance number (1-5), assigned by supervisor at dispatch
+- {n} is the instance number (1-5), assigned by orchestrator at dispatch
 - Commit messages: `feat({scope}): {description}` or `refactor({scope}): {description}`
 - Create PR on completion with spec file linked in description
 - PR title: `[backend-implementer-{n}] {spec title}`
@@ -260,7 +260,7 @@ Add to `logs/progress.md`:
 |---|---|---|---|---|
 ```
 
-The supervisor updates this table on every dispatch and completion.
+The orchestrator updates this table on every dispatch and completion.
 Before dispatching new implementers, check that active count + requested ≤ 5.
 
 ---

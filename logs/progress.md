@@ -32,7 +32,7 @@ _Last updated: 2026-04-08 | Session 06_
 
 ## Completed This Trace
 - [x] frontend-implementer: implement entry-sequence.md — created 3 files
-- [x] reviewer (retry 1): 3 quote authorship violations (living authors) — fixed by supervisor
+- [x] reviewer (retry 1): 3 quote authorship violations (living authors) — fixed by orchestrator
 - [x] reviewer (retry 2): approved, 0 violations
 
 ## Blockers

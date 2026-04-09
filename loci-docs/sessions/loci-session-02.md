@@ -111,7 +111,7 @@ loci/                      ← everything Claude touches
   .claude/
   │   ├── CLAUDE.md        ← project memory, read every session
   │   └── agents/          ← subagent definitions (md files)
-  │       ├── supervisor.md
+  │       ├── orchestrator.md
   │       ├── frontend-dev.md
   │       ├── backend-dev.md
   │       ├── world-builder.md
@@ -197,7 +197,7 @@ The `description` field is the routing rule — write it like a signal, not a jo
 
 | Agent | Model | Role |
 |-------|-------|------|
-| Supervisor | claude-opus-4-6 | Reads the spec, decomposes the task, routes to executors, collects results, decides done/retry. Never writes code. Tools: Read only. |
+| Orchestrator | claude-opus-4-6 | Reads the spec, decomposes the task, routes to executors, collects results, decides done/retry. Never writes code. Tools: Read only. |
 | Frontend dev | claude-sonnet-4-6 | R3F, WebXR, Zustand, shaders. Works in /frontend only. Reads ARCHITECTURE.md and the active spec before every task. |
 | Backend dev | claude-sonnet-4-6 | FastAPI/Hono, SQLite, REST endpoints. Works in /backend only. Enforces `owner_id` + `world_id` on every schema change. |
 | World builder | claude-sonnet-4-6 | Mood/theme input → scene diff JSON. Reads world schema. Outputs partial diffs only — never full world rewrites. |
@@ -206,7 +206,7 @@ The `description` field is the routing rule — write it like a signal, not a jo
 ### Parallel flow
 
 ```
-Supervisor reads spec
+Orchestrator reads spec
   │
   ├── [parallel] Frontend dev  ← git worktree: feat/entry-sequence-fe
   ├── [parallel] Backend dev   ← git worktree: feat/entry-sequence-be
@@ -214,7 +214,7 @@ Supervisor reads spec
   ↓  both complete
 Code Reviewer reads both diffs
   │
-  ├── PASS → Supervisor merges, spec closed
+  ├── PASS → Orchestrator merges, spec closed
   └── FAIL → routes back to executor with reviewer comments
               max 2 retry iterations, then escalate to human
 ```
@@ -238,7 +238,7 @@ Git worktrees are the mechanism — each agent gets its own checked-out branch o
   "servers": {
     "loci-db-dev":  { "url": "...", "scope": "backend-dev" },
     "loci-db-prod": { "url": "...", "scope": "human-only" },
-    "scene-schema": { "url": "...", "scope": "world-builder, supervisor" },
+    "scene-schema": { "url": "...", "scope": "world-builder, orchestrator" },
     "filesystem":   { "url": "...", "scope": "all", "access": "read" }
   }
 }
@@ -252,7 +252,7 @@ Git worktrees are the mechanism — each agent gets its own checked-out branch o
 | MCP token cost | Too many MCP servers = 40–50% of context eaten by tool definitions before any work. Keep MCPs minimal per agent. |
 | No headset testing | Agents cannot validate experiential quality in VR. Every spec needs a human review section that is explicitly not delegatable. |
 | Fast-moving APIs | R3F and @react-three/xr docs change quickly. Pin versions in package.json. Keep relevant docs linked in each spec. |
-| Cost | Parallel Opus sessions are expensive. Supervisor = Opus. Executors + Reviewer = Sonnet. Opus only where orchestration judgment is needed. |
+| Cost | Parallel Opus sessions are expensive. Orchestrator = Opus. Executors + Reviewer = Sonnet. Opus only where orchestration judgment is needed. |
 
 ### Repo structure — single repo with sparse checkout
 
@@ -307,7 +307,7 @@ Agent definitions have two layers. Base agents live in a shared repo and define 
 ```
 studio/
 ├── agents/                    ← shared base agents, reused across all projects
-│   ├── supervisor.md
+│   ├── orchestrator.md
 │   ├── frontend-dev.md
 │   ├── backend-dev.md
 │   ├── code-reviewer.md
@@ -428,7 +428,7 @@ Anthropic's servers are stateless — they see the full context on every call, r
 
 **The `memory: project` flag** is the one exception. When set, Claude Code writes a small markdown file to a designated directory at the end of a session — a summary of codebase patterns, architectural decisions, and recurring findings. On the next session it reads that file back in as part of the initial context. Cross-session memory is just a text file on your disk, not a live connection or server-side state.
 
-**Parallel agents share nothing except the filesystem.** Each Claude Code process has its own independent conversation history in RAM. If the frontend agent writes a file and the backend agent needs to know about it, the only way that happens is if the backend agent explicitly reads that file. There is no shared context, no inter-agent communication channel, no awareness of each other. This is exactly why the supervisor role exists — it is the only agent that reads outputs from other agents and synthesises them into a coherent next action.
+**Parallel agents share nothing except the filesystem.** Each Claude Code process has its own independent conversation history in RAM. If the frontend agent writes a file and the backend agent needs to know about it, the only way that happens is if the backend agent explicitly reads that file. There is no shared context, no inter-agent communication channel, no awareness of each other. This is exactly why the orchestrator role exists — it is the only agent that reads outputs from other agents and synthesises them into a coherent next action.
 
 ---
 

@@ -44,7 +44,7 @@ Search both repos for all occurrences of `code-reviewer` and update to `reviewer
 - `.claude/CLAUDE.md` — if it references the agent by name
 - `.claude/settings.json` — if hook config references agent names
 - `logs/progress.md` — if initial state mentions agent names
-- `.claude/agents/supervisor.md` — almost certainly references reviewer by name for dispatch
+- `.claude/agents/orchestrator.md` — almost certainly references reviewer by name for dispatch
 - `scripts/log-event.sh` — if agent names are referenced
 - `README.md` — agent architecture table
 
