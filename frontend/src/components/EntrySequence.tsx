@@ -10,7 +10,6 @@ type SequencePhase =
   | 'DARKNESS'
   | 'QUOTE_FADE_IN'
   | 'QUOTE_HOLD'
-  | 'QUOTE_FADE_OUT'
   | 'WORLD_FADE_IN'
   | 'COMPLETE'
 
@@ -46,32 +45,6 @@ function selectQuote(sessionStartTime: number): Quote {
   return quotes[index]
 }
 
-// Full-screen black overlay plane — sits at z = -0.5, in front of world but behind text
-// opacityRef is a shared ref mutated each frame by the parent useFrame; we read it here
-// imperatively to avoid one-frame React state lag in XR.
-function DarknessOverlay({ opacityRef }: { opacityRef: React.RefObject<number> }) {
-  const matRef = useRef<THREE.MeshBasicMaterial>(null)
-
-  useFrame(() => {
-    if (matRef.current && opacityRef.current !== null) {
-      matRef.current.opacity = opacityRef.current
-    }
-  })
-
-  return (
-    <mesh position={[0, 0, -0.5]}>
-      <planeGeometry args={[100, 100]} />
-      <meshBasicMaterial
-        ref={matRef}
-        color="black"
-        transparent
-        opacity={1}
-        depthWrite={false}
-      />
-    </mesh>
-  )
-}
-
 // Stub world — placeholder until Hokkaido world spec is implemented
 // opacityRef is a shared ref mutated each frame by the parent useFrame.
 function WorldStub({ opacityRef }: { opacityRef: React.RefObject<number> }) {
@@ -91,7 +64,7 @@ function WorldStub({ opacityRef }: { opacityRef: React.RefObject<number> }) {
   return (
     <group>
       {/* Ground plane */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.6, 0]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.6, 0]} renderOrder={0}>
         <planeGeometry args={[40, 40]} />
         <meshBasicMaterial
           ref={groundMatRef}
@@ -101,7 +74,7 @@ function WorldStub({ opacityRef }: { opacityRef: React.RefObject<number> }) {
         />
       </mesh>
       {/* Horizon fog box — simple atmospheric suggestion */}
-      <mesh position={[0, 2, -8]}>
+      <mesh position={[0, 2, -8]} renderOrder={0}>
         <boxGeometry args={[20, 6, 0.1]} />
         <meshBasicMaterial ref={fogMatRef} color="#0d1b2a" transparent opacity={0} />
       </mesh>
@@ -120,8 +93,7 @@ export function EntrySequence({ onComplete }: EntrySequenceProps) {
   const [phase, setPhase] = useState<SequencePhase>('DARKNESS')
   const [quoteOpacity, setQuoteOpacity] = useState(0)
 
-  // Shared opacity refs — mutated imperatively each frame; child components read them in useFrame
-  const darknessOpacityRef = useRef<number>(1)
+  // World opacity ref — mutated imperatively each frame; WorldStub reads it in useFrame
   const worldOpacityRef = useRef<number>(0)
 
   // Phase start time in seconds (elapsed from useFrame clock)
@@ -173,17 +145,6 @@ export function EntrySequence({ onComplete }: EntrySequenceProps) {
         const holdS = ENTRY_TIMING.QUOTE_HOLD_MS * MS
         if (t >= holdS) {
           phaseStartRef.current = elapsed
-          setPhaseRef('QUOTE_FADE_OUT')
-        }
-        break
-      }
-
-      case 'QUOTE_FADE_OUT': {
-        const fadeS = ENTRY_TIMING.QUOTE_FADE_OUT_MS * MS
-        const progress = Math.min(t / fadeS, 1)
-        setQuoteOpacity(1 - progress)
-        if (progress >= 1) {
-          phaseStartRef.current = elapsed
           setPhaseRef('WORLD_FADE_IN')
         }
         break
@@ -192,8 +153,8 @@ export function EntrySequence({ onComplete }: EntrySequenceProps) {
       case 'WORLD_FADE_IN': {
         const fadeS = ENTRY_TIMING.WORLD_FADE_IN_MS * MS
         const progress = Math.min(t / fadeS, 1)
-        // Mutate opacity refs directly — child useFrame hooks read these each frame
-        darknessOpacityRef.current = 1 - progress
+        // Quote fades out as world fades in — both driven by the same timer
+        setQuoteOpacity(1 - progress)
         worldOpacityRef.current = progress
         if (progress >= 1) {
           setPhaseRef('COMPLETE')
@@ -212,6 +173,9 @@ export function EntrySequence({ onComplete }: EntrySequenceProps) {
 
   return (
     <group>
+      {/* Pure black scene background — prevents WebXR default colour showing through */}
+      <color attach="background" args={['#000000']} />
+
       {/* World stub — always mounted, opacity controlled via ref by parent useFrame */}
       <WorldStub opacityRef={worldOpacityRef} />
 
@@ -229,13 +193,11 @@ export function EntrySequence({ onComplete }: EntrySequenceProps) {
           textAlign="center"
           fillOpacity={quoteOpacity}
           font={undefined}
+          renderOrder={1}
         >
           {`"${quote.current.text}"\n\n— ${quote.current.author}`}
         </Text>
       )}
-
-      {/* Full-screen darkness overlay — rendered last so it sits on top */}
-      {!isComplete && <DarknessOverlay opacityRef={darknessOpacityRef} />}
     </group>
   )
 }
