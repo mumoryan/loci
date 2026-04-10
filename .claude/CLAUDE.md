@@ -203,7 +203,7 @@ No exceptions. Schema is multi-user ready from day one.
 Do not revisit without explicit human instruction:
 
 - Note form: orbs/glyphs, text reveals at 2m proximity
-- Entry sequence: darkness → historical quote fade → ambient world (~8s)
+- Entry sequence: darkness → historical quote fade → ambient world (~5s)
 - Default world: Hokkaido mansion (Hitman GAMA-inspired)
 - Time-of-day lighting keyed to device clock
 - Planned worlds: story tower, thought gallery, principles temple
@@ -234,13 +234,27 @@ Do not revisit without explicit human instruction:
 - Optimization loop designed (template at specs/optimizations/TEMPLATE.md)
 - Observability dashboard designed (agent-primitives/observability/)
 - Scripted infrastructure layer implemented (start.sh, dispatch.sh, end.sh, guard-orchestrator.sh)
-- Known bug: log-event.sh field extraction — all fields show "unknown". Debugging in progress.
-- Next action: fix log-event.sh, then run entry sequence via loci-start.sh
+- loci-start.sh validated end-to-end
+- Entry sequence implemented and merged (PR #11), bugfixed in PR #14
+- Frontend scaffold implemented and merged (PR #12)
+- V1 items 2–5 not started (Hokkaido world, notes/orbs, backend API, second world)
+
+## Active Bugs
+
+- **events.jsonl**: trace_id/agent/cost_bucket all "unknown", tokens/cost all zero — log-event.sh payload extraction broken
+- **Session logs**: logs/session-*.log files are raw ANSI escape sequences — unreadable
+- **Reviewer PAT**: lacks `pull_requests:write` scope — merge falls back to implementer PAT
 
 ---
 
 ## Open Items
 
-- Fix log-event.sh hook payload field mapping
+- Fix log-event.sh (observability broken)
+- Fix session log readability (strip ANSI from session-*.log)
+- Add `pull_requests:write` to reviewer PAT in GitHub settings
+- Headset test entry sequence on Quest standalone
+- Slim agent context to reduce token burn (reviewer ran 3 passes on entry-sequence)
 - WorldDiff TypeScript type (deferred until first world is built)
 - Data privacy / e2e encryption (post-PoC)
+
+Full status and backlog: `loci-docs/project-status.md`
