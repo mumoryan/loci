@@ -111,10 +111,13 @@ The dashboard shows cost by agent, cost by bucket, trace summaries, retry
 rates, and daily cost trends. Agents can read from the database for
 optimization analysis but cannot modify or delete entries.
 
-## V1 Scope
+## Status
 
-1. Entry sequence — darkness → historical quote → world fade-in
-2. Default Hokkaido world with time-of-day lighting
-3. Notes as orbs — create, place, reveal on proximity approach
-4. Note persistence via backend API
-5. One additional world beyond the default
+| Item | Status |
+|---|---|
+| Entry sequence (darkness → quote → world, ~5s) | Done — PR #11, #14 |
+| Frontend scaffold (Vite + R3F + XR + HTTPS) | Done — PR #12 |
+| Default Hokkaido world with time-of-day lighting | Not started |
+| Notes as orbs — create, place, reveal on proximity | Not started |
+| Note persistence via backend API | Not started |
+| One additional world beyond the default | Not started |
