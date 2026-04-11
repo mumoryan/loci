@@ -1,0 +1,3 @@
+# Soundtracks and music
+public/music/*
+!public/music/README.md
