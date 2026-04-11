@@ -1,11 +1,11 @@
 import { useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Text } from '@react-three/drei'
-import * as THREE from 'three'
 import { ENTRY_TIMING } from '../constants/timing'
 import { AUDIO } from '../constants/audio'
 import { quotes, Quote } from '../data/quotes'
 import { useAudioStore } from '../store/audioStore'
+import { HokkaidoMansion } from '../scenes/HokkaidoMansion'
 
 // --- Phase state machine ---
 type SequencePhase =
@@ -45,43 +45,6 @@ function selectQuote(sessionStartTime: number): Quote {
   }
 
   return quotes[index]
-}
-
-// Stub world — placeholder until Hokkaido world spec is implemented
-// opacityRef is a shared ref mutated each frame by the parent useFrame.
-function WorldStub({ opacityRef }: { opacityRef: React.RefObject<number> }) {
-  const groundMatRef = useRef<THREE.MeshBasicMaterial>(null)
-  const fogMatRef = useRef<THREE.MeshBasicMaterial>(null)
-
-  useFrame(() => {
-    const opacity = opacityRef.current ?? 0
-    if (groundMatRef.current) {
-      groundMatRef.current.opacity = opacity
-    }
-    if (fogMatRef.current) {
-      fogMatRef.current.opacity = opacity * 0.6
-    }
-  })
-
-  return (
-    <group>
-      {/* Ground plane */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.6, 0]} renderOrder={0}>
-        <planeGeometry args={[40, 40]} />
-        <meshBasicMaterial
-          ref={groundMatRef}
-          color="#1a1a2e"
-          transparent
-          opacity={0}
-        />
-      </mesh>
-      {/* Horizon fog box — simple atmospheric suggestion */}
-      <mesh position={[0, 2, -8]} renderOrder={0}>
-        <boxGeometry args={[20, 6, 0.1]} />
-        <meshBasicMaterial ref={fogMatRef} color="#0d1b2a" transparent opacity={0} />
-      </mesh>
-    </group>
-  )
 }
 
 interface EntrySequenceProps {
@@ -209,8 +172,10 @@ export function EntrySequence({ onComplete }: EntrySequenceProps) {
       {/* Pure black scene background — prevents WebXR default colour showing through */}
       <color attach="background" args={['#000000']} />
 
-      {/* World stub — always mounted, opacity controlled via ref by parent useFrame */}
-      <WorldStub opacityRef={worldOpacityRef} />
+      {/* Hokkaido mansion — always mounted. Parent useFrame drives the shared
+          opacityRef which the mansion multiplies against each material's
+          designed opacity for a coherent fade-in. */}
+      <HokkaidoMansion opacityRef={worldOpacityRef} />
 
       {/* Quote text — troika-three-text via @react-three/drei Text */}
       {!isComplete && (
