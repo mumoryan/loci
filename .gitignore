@@ -34,3 +34,4 @@ build/
 
 # Certs (generated locally for WebXR HTTPS dev)
 certs/
+.claude/scheduled_tasks.lock
