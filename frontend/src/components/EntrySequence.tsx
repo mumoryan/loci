@@ -3,7 +3,9 @@ import { useFrame } from '@react-three/fiber'
 import { Text } from '@react-three/drei'
 import * as THREE from 'three'
 import { ENTRY_TIMING } from '../constants/timing'
+import { AUDIO } from '../constants/audio'
 import { quotes, Quote } from '../data/quotes'
+import { useAudioStore } from '../store/audioStore'
 
 // --- Phase state machine ---
 type SequencePhase =
@@ -108,6 +110,11 @@ export function EntrySequence({ onComplete }: EntrySequenceProps) {
     setPhase(p)
   }
 
+  const audioPlay = useAudioStore((s) => s.play)
+  const audioSetVolume = useAudioStore((s) => s.setVolume)
+  const audioStartedRef = useRef(false)
+  const audioFadeStartRef = useRef<number | null>(null)
+
   useFrame(({ clock }) => {
     const elapsed = clock.getElapsedTime() // seconds
 
@@ -134,6 +141,23 @@ export function EntrySequence({ onComplete }: EntrySequenceProps) {
         const fadeS = ENTRY_TIMING.QUOTE_FADE_IN_MS * MS
         const progress = Math.min(t / fadeS, 1)
         setQuoteOpacity(progress)
+
+        // Start audio quietly once AUDIO_START_OFFSET_MS into this phase
+        if (!audioStartedRef.current && t >= ENTRY_TIMING.AUDIO_START_OFFSET_MS * MS) {
+          audioStartedRef.current = true
+          audioFadeStartRef.current = elapsed
+          audioPlay()
+        }
+
+        // Ramp volume up over AUDIO.FADE_IN_MS from the moment audio started
+        if (audioFadeStartRef.current !== null) {
+          const fadeProgress = Math.min(
+            (elapsed - audioFadeStartRef.current) / (AUDIO.FADE_IN_MS * MS),
+            1,
+          )
+          audioSetVolume(fadeProgress * AUDIO.DEFAULT_VOLUME)
+        }
+
         if (progress >= 1) {
           phaseStartRef.current = elapsed
           setPhaseRef('QUOTE_HOLD')
@@ -142,6 +166,15 @@ export function EntrySequence({ onComplete }: EntrySequenceProps) {
       }
 
       case 'QUOTE_HOLD': {
+        // Continue volume ramp if audio fade hasn't finished yet
+        if (audioFadeStartRef.current !== null) {
+          const fadeProgress = Math.min(
+            (elapsed - audioFadeStartRef.current) / (AUDIO.FADE_IN_MS * MS),
+            1,
+          )
+          audioSetVolume(fadeProgress * AUDIO.DEFAULT_VOLUME)
+        }
+
         const holdS = ENTRY_TIMING.QUOTE_HOLD_MS * MS
         if (t >= holdS) {
           phaseStartRef.current = elapsed
