@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Text } from '@react-three/drei'
+import * as THREE from 'three'
 import { ENTRY_TIMING } from '../constants/timing'
 import { AUDIO } from '../constants/audio'
 import { quotes, Quote } from '../data/quotes'
@@ -61,6 +62,12 @@ export function EntrySequence({ onComplete }: EntrySequenceProps) {
   // World opacity ref — mutated imperatively each frame; WorldStub reads it in useFrame
   const worldOpacityRef = useRef<number>(0)
 
+  // Camera-anchored rig for the quote text. The quote should appear 2u
+  // directly in front of the user regardless of camera spawn position or VR
+  // headset pose. We update this group's transform from the live camera each
+  // frame; Text lives at local [0, 0, -2].
+  const quoteRigRef = useRef<THREE.Group>(null)
+
   // Phase start time in seconds (elapsed from useFrame clock)
   const phaseStartRef = useRef<number | null>(null)
 
@@ -78,8 +85,15 @@ export function EntrySequence({ onComplete }: EntrySequenceProps) {
   const audioStartedRef = useRef(false)
   const audioFadeStartRef = useRef<number | null>(null)
 
-  useFrame(({ clock }) => {
+  useFrame(({ clock, camera }) => {
     const elapsed = clock.getElapsedTime() // seconds
+
+    // Anchor the quote rig to the live camera so the Text sits 2u in front at
+    // eye level — works for both desktop spawn and WebXR head pose.
+    if (quoteRigRef.current) {
+      quoteRigRef.current.position.copy(camera.position)
+      quoteRigRef.current.quaternion.copy(camera.quaternion)
+    }
 
     // Initialise phase clock on first frame
     if (phaseStartRef.current === null) {
@@ -177,24 +191,27 @@ export function EntrySequence({ onComplete }: EntrySequenceProps) {
           designed opacity for a coherent fade-in. */}
       <HokkaidoMansion opacityRef={worldOpacityRef} />
 
-      {/* Quote text — troika-three-text via @react-three/drei Text */}
+      {/* Quote text — anchored to a camera-tracking rig so it always sits
+          2u directly in front of the viewer at eye height. */}
       {!isComplete && (
-        <Text
-          position={[0, 0, -2]}
-          fontSize={0.08}
-          color="white"
-          anchorX="center"
-          anchorY="middle"
-          maxWidth={1.4}
-          lineHeight={1.5}
-          letterSpacing={0.02}
-          textAlign="center"
-          fillOpacity={quoteOpacity}
-          font={undefined}
-          renderOrder={1}
-        >
-          {`"${quote.current.text}"\n\n— ${quote.current.author}`}
-        </Text>
+        <group ref={quoteRigRef}>
+          <Text
+            position={[0, 0, -2]}
+            fontSize={0.08}
+            color="white"
+            anchorX="center"
+            anchorY="middle"
+            maxWidth={1.4}
+            lineHeight={1.5}
+            letterSpacing={0.02}
+            textAlign="center"
+            fillOpacity={quoteOpacity}
+            font={undefined}
+            renderOrder={1}
+          >
+            {`"${quote.current.text}"\n\n— ${quote.current.author}`}
+          </Text>
+        </group>
       )}
     </group>
   )
