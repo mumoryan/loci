@@ -1,6 +1,7 @@
 import { useFrame } from '@react-three/fiber'
 import { useKeyboardControls, PointerLockControls } from '@react-three/drei'
 import { useXR } from '@react-three/xr'
+import * as THREE from 'three'
 
 // Units per second. Mansion main living is 18u wide, so 5 u/s crosses it in
 // about 3.5 seconds — brisk but not disorienting.
@@ -16,26 +17,46 @@ export const KEY_MAP: Array<{ name: MovementControl; keys: string[] }> = [
 ]
 
 /**
- * Desktop-only navigation — WASD/arrows plus PointerLockControls for mouse
- * look. Completely inert when an XR session is active so it never fights the
- * headset's own tracking.
+ * WASD/arrow navigation plus PointerLockControls for mouse look.
+ * In VR, moves the XR origin group (since the XR system owns the camera).
+ * On desktop, moves the camera directly.
+ * PointerLockControls only render outside VR.
  */
 export function PlayerControls() {
-  // In @react-three/xr v6, `session` is `XRSession | undefined` (never null),
-  // so compare against undefined — `!== null` is always true and inverts the
-  // gate.
   const isPresenting = useXR((state) => state.session !== undefined)
+  const origin = useXR((state) => state.origin)
   const [, get] = useKeyboardControls<MovementControl>()
 
   useFrame((state, delta) => {
-    if (isPresenting) return
-
     const { forward, backward, left, right } = get()
+    if (!forward && !backward && !left && !right) return
 
-    if (forward) state.camera.position.z -= SPEED * delta
-    if (backward) state.camera.position.z += SPEED * delta
-    if (left) state.camera.position.x -= SPEED * delta
-    if (right) state.camera.position.x += SPEED * delta
+    const camera = state.camera
+
+    // Camera-relative direction vectors (horizontal plane only)
+    const frontVec = new THREE.Vector3()
+    camera.getWorldDirection(frontVec)
+    frontVec.y = 0
+    frontVec.normalize()
+
+    const rightVec = new THREE.Vector3()
+    rightVec.crossVectors(frontVec, camera.up).normalize()
+
+    const move = new THREE.Vector3()
+    if (forward) move.add(frontVec)
+    if (backward) move.sub(frontVec)
+    if (right) move.add(rightVec)
+    if (left) move.sub(rightVec)
+
+    move.normalize().multiplyScalar(SPEED * delta)
+
+    // In VR the XR system overrides state.camera each frame, so we move the
+    // XR origin group instead. On desktop we move the camera directly.
+    if (isPresenting && origin) {
+      origin.position.add(move)
+    } else {
+      camera.position.add(move)
+    }
   })
 
   if (isPresenting) return null
