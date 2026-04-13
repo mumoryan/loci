@@ -1,16 +1,36 @@
 # Loci — Architecture
-_Human-authored. Read-only for all agents. Last updated: 2026-04-02._
+_Human-authored. Read-only for all agents. Last updated: 2026-04-13._
 
 ---
 
 ## What Loci Is
 
-A personal VR contemplation tool for Meta Quest using WebXR. Notes exist as
-orbs/glyphs embedded in discrete 3D environments, each with narrative intent.
-Used for contemplation, reflection, memory, and creative world-building.
+A personal VR mind palace for Meta Quest using WebXR. A spatial container
+for the full texture of your inner life — thoughts, sounds, images, objects,
+moments — anchored in worlds you build, that you can re-enter to think, feel,
+and remember.
 
 Name derives from the method of loci — the ancient memory technique of
 anchoring thoughts to traversable locations.
+
+**One-sentence value proposition:**
+> A place to think out loud — in any form — and come back to.
+
+**The core insight:** Insights don't survive being written down. They survive
+being *somewhere*. The act of returning to a thought anchored in a place
+recreates the mental state that produced it. This is what breaks the loop.
+
+**Two things that are equally important:**
+- **Expression is generative.** Writing, talking, recording — this is how
+  insights form, not just how they're captured. Loci must encourage freeform
+  input in any medium.
+- **Return is transformative.** Coming back to a thought anchored in a place
+  you remember recreates the state that made it matter.
+
+**Memory types beyond text** (not V1, but schema-ready): sounds, images,
+video, 3D objects, holograms — all should share the same elusive,
+proximity-based spatial property as text notes. The medium changes; the
+experience of encountering something you left behind does not.
 
 Aesthetic references:
 - **The Beginner's Guide** — retro, vast, crisp, ambient, intentional low-fi
@@ -22,8 +42,10 @@ Aesthetic references:
 
 - **VR only** — AR ruled out. Environmental control is core to the experience.
 - **Primary target:** Meta Quest (standalone, WebXR via browser)
-- **Secondary:** PC VR via browser
+- **Secondary:** PC VR via browser, Pico and other OpenXR-compliant headsets
 - **Distribution:** URL — no app store
+- **Hardware agnostic:** Stay within WebXR standard and @react-three/xr.
+  Never use Quest-specific APIs directly.
 
 ---
 
@@ -33,7 +55,7 @@ Aesthetic references:
 | Concern | Choice | Reason |
 |---|---|---|
 | 3D renderer | React Three Fiber (R3F) | TS-native, fast iteration, Quest browser support |
-| XR | @react-three/xr v6 | Cross-platform WebXR |
+| XR | @react-three/xr v6 | Cross-platform WebXR, hardware agnostic |
 | Text | troika-three-text | Crisp SDF text in VR |
 | State | Zustand | Lightweight, R3F-compatible |
 | Language | TypeScript strict | Type safety throughout |
@@ -42,7 +64,7 @@ Aesthetic references:
 | Concern | Choice | Reason |
 |---|---|---|
 | Runtime | Bun | Fast, TS-native, single binary |
-| Framework | Fastify | Mature, typed, plugin ecosystem |
+| Framework | Fastify | Mature since 2016, typed, plugin ecosystem |
 | Database | SQLite (V1) | Zero-infra, sufficient for single user |
 | Language | TypeScript strict | Consistent with frontend |
 
@@ -61,6 +83,10 @@ Every table includes from day one:
 - `owner_id` — single user in V1, multi-user ready
 - `world_id` — scopes all data to a world
 - `created_at`, `updated_at` — ISO8601 UTC
+- `media_type` — enum: text | audio | image | video | object (text only in V1)
+
+`media_type` is included now so the schema never changes when new memory types
+arrive. V1 only writes and reads `text` values.
 
 The V1 → multi-user gap is a WebSocket layer and sessions table.
 The schema does not change.
@@ -75,15 +101,26 @@ The schema does not change.
   agent-primitives/            Shared base definitions (own git repo)
     base/                      Layer 0+1: identity + capability
     stacks/                    Layer 2: stack-specific context
+    schema/                    Agent contract schema v2
+    scripts/                   start.sh, dispatch.sh, end.sh, guard-supervisor.sh
+    observability/             schema.sql, sync-events.sh, dashboard.ts
   loci/                        Loci monorepo (this repo)
     .claude/
       CLAUDE.md                Project memory (agents read this)
       ARCHITECTURE.md          This file (agents read, never write)
-      settings.json            Hook config
+      settings.json            Hook config (PreToolUse + PostToolUse)
       agents/                  Layer 3: Loci-specific stubs
-    scripts/                   guard-core.sh, log-event.sh, merge-agent.sh
-    logs/                      events.jsonl, progress.md, loci.db
+    scripts/
+      guard-core.sh            PreToolUse — blocks writes to protected paths
+      agent-log.sh             PostToolUse — structured session logging
+      new-agent-worktree.sh    Sparse checkout per agent worktree
+      loci-start.sh            Session bootstrap wrapper
+      loci-dispatch.sh         Worktree creation wrapper
+      loci-end.sh              Teardown + cleanup wrapper
+    logs/                      session-{PPID}.log files (gitignored)
     specs/                     Feature specs — all features start here
+    worktrees/                 Transient agent working dirs (gitignored)
+    loci-docs/                 Human-only — excluded via sparse checkout
     frontend/src/
     backend/src/
 ```
@@ -92,26 +129,28 @@ The schema does not change.
 
 | Agent | Transformation | Model | Sensitive data |
 |---|---|---|---|
-| orchestrator | task → routed agent call | claude-opus-4-6 | false |
+| supervisor | task → routed agent call | claude-opus-4-6 | false |
 | frontend-implementer | spec-path → frontend code | claude-sonnet-4-6 | false |
 | backend-implementer | spec-path → API code | claude-sonnet-4-6 | false |
 | world-builder | mood/theme → environment JSON | claude-sonnet-4-6 | true |
 | reviewer | diff + spec → validation result | claude-haiku-4-5-20251001 | false |
 
 ### Dispatch rules
-1. No spec → no dispatch. Orchestrator writes spec first.
+1. No spec → no dispatch. Supervisor writes spec first.
 2. Specialists receive spec file paths only — never freeform descriptions.
 3. Sensitive data (note content) flows only to world-builder, stripped from all others.
-4. Reviewer runs after every implementation. Escalates failures to orchestrator.
+4. Reviewer runs after every implementation. Escalates failures to supervisor.
 5. Human approval required for all world-builder outputs.
+6. Max 2 retry iterations per agent per spec. Third failure → human resolves.
 
 ### Protected paths (guard-core.sh blocks all agent writes)
 `.claude/`, `ARCHITECTURE.md`, `CLAUDE.md`, `mcp.json`, `agents/`
 
 ### Observability
-- Every tool call → one line appended to `logs/events.jsonl`
-- Orchestrator reads/writes `logs/progress.md` each session
-- SQLite dashboard synced from events.jsonl on session end
+- Every tool call → one JSON line to `logs/session-{PPID}.log`
+- Four fields per line: timestamp, agent, task, action
+- One log file per Claude Code invocation (PPID as session anchor)
+- `logs/` is gitignored — never committed
 
 ---
 
@@ -121,24 +160,48 @@ These are final for V1. Do not revisit without explicit human instruction.
 
 | Decision | Value |
 |---|---|
-| Note form | Orbs/glyphs — reveal text at 2m proximity radius |
+| Core interaction | Expression + return — equally weighted |
+| Note form | Orbs/glyphs — reveal content at 2m proximity radius |
+| Memory types V1 | Text only — schema ready for audio/image/video/object |
 | Entry sequence | Darkness → historical quote fade → ambient world (~8s total) |
+| Entry purpose | State change from ordinary life to reflection — not just animation |
 | Quote source | Hardcoded in `frontend/src/data/quotes.ts` |
-| Default world | Hokkaido-inspired mansion |
-| Time-of-day lighting | Keyed to device clock |
+| Default world | Hokkaido mansion — see hokkaido-mansion-design.md |
+| Time-of-day lighting | Keyed to real device clock — morning/afternoon/evening |
 | Planned worlds | Story tower, thought gallery, principles temple |
 | Bloom | Fake — additive emissive halos. Never UnrealBloomPass. |
 | AR | Ruled out permanently |
 | Multi-user V1 | No |
 | Cloud V1 | No |
+| Hardware | WebXR standard only — never Quest-specific APIs |
+| Desktop nav | WASD + mouse look via @react-three/drei — disabled when isPresenting |
+
+---
+
+## Quest Rendering Constraints
+
+**Forbidden:**
+- UnrealBloomPass or any full-screen post-processing
+- Dynamic shadows — baked lighting only
+- Real-time global illumination
+- Particle counts above 2,000
+- DOM UI overlays inside VR session
+- Uncompressed textures
+
+**Approved:**
+- Fake bloom: emissive MeshBasicMaterial + additive halo mesh behind object
+- Ambient shifts: interpolated hemisphere light + fog keyed to device clock
+- Text: troika-three-text (SDF) only — no canvas textures
+- State: Zustand for world state, React state for UI only
 
 ---
 
 ## V1 Scope
 
 Minimum viable experience that feels complete:
-1. Entry sequence (darkness → quote → world)
-2. Default Hokkaido world with time-of-day lighting
-3. Notes as orbs — create, place, reveal on approach
+1. Entry sequence (darkness → quote → world) — ritual state change
+2. Default Hokkaido mansion with time-of-day lighting
+3. Notes as orbs — create via voice/controller/import, reveal on approach
 4. Basic note persistence via backend API
-5. One additional world beyond the default
+5. Desktop WASD navigation (non-VR fallback)
+6. One additional world beyond the default
