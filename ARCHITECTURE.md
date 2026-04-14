@@ -55,6 +55,7 @@ Aesthetic references:
 | Concern | Choice | Reason |
 |---|---|---|
 | 3D renderer | React Three Fiber (R3F) | TS-native, fast iteration, Quest browser support |
+| WebGPU renderer | R3F WebGPU backend | High-Fidelity tier on PCVR — renderer swap, not a rewrite |
 | XR | @react-three/xr v6 | Cross-platform WebXR, hardware agnostic |
 | Text | troika-three-text | Crisp SDF text in VR |
 | State | Zustand | Lightweight, R3F-compatible |
@@ -67,6 +68,38 @@ Aesthetic references:
 | Framework | Fastify | Mature since 2016, typed, plugin ecosystem |
 | Database | SQLite (V1) | Zero-infra, sufficient for single user |
 | Language | TypeScript strict | Consistent with frontend |
+
+## Rendering Tiers
+
+Two tiers, one codebase. Detected automatically at session start, persisted
+to user preferences. User can override in settings.
+
+| Tier | Target | Renderer | Detection signal |
+|---|---|---|---|
+| Standard | Quest standalone | WebGL | WebGPU unavailable or mobile-class texture limits |
+| High-Fidelity | PCVR via Chrome/Edge + OpenXR | WebGPU | WebGPU available + desktop-class texture limits |
+
+### Per-tier strategy
+
+| Feature | Standard | High-Fidelity |
+|---|---|---|
+| Materials | MeshBasicMaterial | MeshStandardMaterial (PBR) |
+| Bloom | Standard: fake emissive halos. High-Fidelity: real WebGPU post-processing. Never UnrealBloomPass. |
+| Rendering tiers | Two tiers auto-detected at session start, user-overridable in settings. Standard (WebGL) for Quest standalone, High-Fidelity (WebGPU) for PCVR. |
+| Shadows | Baked only | Dynamic soft shadows |
+| Lighting | Hemisphere + ambient | Full dynamic lighting |
+| Textures | KTX2/Basis Universal compressed | Full resolution |
+
+### Asset authoring standard
+Assets authored once at high resolution. KTX2/Basis Universal compressed
+variants served to Standard tier. No separate asset pipelines.
+
+### Constraints
+- High-Fidelity tier is V1 scope, not PoC.
+- Hokkaido is the first world to implement both tiers.
+- No native app. URL distribution holds for both tiers.
+- PCVR users connect via Chrome/Edge with SteamVR or Oculus as OpenXR runtime.
+- WebGPU + WebXR is still maturing — monitor browser support before shipping.
 
 ### Infrastructure
 - **V1:** Local only. No cloud.
@@ -201,8 +234,9 @@ These are final for V1. Do not revisit without explicit human instruction.
 
 ---
 
-## Quest Rendering Constraints
+## Rendering Constraints
 
+### Standard tier (Quest standalone)
 **Forbidden:**
 - UnrealBloomPass or any full-screen post-processing
 - Dynamic shadows — baked lighting only
@@ -210,12 +244,19 @@ These are final for V1. Do not revisit without explicit human instruction.
 - Particle counts above 2,000
 - DOM UI overlays inside VR session
 - Uncompressed textures
-
 **Approved:**
 - Fake bloom: emissive MeshBasicMaterial + additive halo mesh behind object
 - Ambient shifts: interpolated hemisphere light + fog keyed to device clock
 - Text: troika-three-text (SDF) only — no canvas textures
 - State: Zustand for world state, React state for UI only
+
+### High-Fidelity tier (PCVR)
+**Approved additions over Standard:**
+- Real bloom via WebGPU post-processing
+- Dynamic soft shadows
+- MeshStandardMaterial with PBR textures
+- Full-resolution KTX2 textures
+- Screen-space ambient occlusion
 
 ---
 
@@ -228,6 +269,7 @@ Minimum viable experience that feels complete:
 4. Basic note persistence via backend API
 5. Desktop WASD navigation (non-VR fallback)
 6. One additional world beyond the default
+7. High-Fidelity rendering tier for PCVR (Hokkaido as first dual-tier world)
 
 ### Current status
 
