@@ -1,0 +1,9 @@
+{
+  "name": "loci",
+  "private": true,
+  "scripts": {
+    "fe":  "cd frontend && bun run dev",
+    "be":  "cd backend && bun run dev",
+    "dev": "./scripts/dev.sh"
+  }
+}
