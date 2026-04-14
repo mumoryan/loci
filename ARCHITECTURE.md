@@ -95,15 +95,24 @@ The schema does not change.
 
 ## Agent Architecture
 
+### Session lifecycle
+
+Never run `claude` directly. Always use `loci-start.sh` — it ensures hooks
+are verified, IDs are generated, and the environment is clean before any
+agent starts.
+
+```bash
+./scripts/loci-start.sh   # start session
+./scripts/loci-end.sh     # sync logs, clean worktrees, archive
+./scripts/dashboard.sh    # observability dashboard
+```
+
 ### Repo structure
 ```
 ~/Development/loci-root/
   agent-primitives/            Shared base definitions (own git repo)
     base/                      Layer 0+1: identity + capability
     stacks/                    Layer 2: stack-specific context
-    schema/                    Agent contract schema v2
-    scripts/                   start.sh, dispatch.sh, end.sh, guard-supervisor.sh
-    observability/             schema.sql, sync-events.sh, dashboard.ts
   loci/                        Loci monorepo (this repo)
     .claude/
       CLAUDE.md                Project memory (agents read this)
@@ -114,15 +123,20 @@ The schema does not change.
       guard-core.sh            PreToolUse — blocks writes to protected paths
       agent-log.sh             PostToolUse — structured session logging
       new-agent-worktree.sh    Sparse checkout per agent worktree
-      loci-start.sh            Session bootstrap wrapper
-      loci-dispatch.sh         Worktree creation wrapper
-      loci-end.sh              Teardown + cleanup wrapper
-    logs/                      session-{PPID}.log files (gitignored)
+      loci-start.sh            Session bootstrap — always use this, never claude directly
+      loci-end.sh              Teardown, log sync, worktree cleanup
+      sync-events.sh           Syncs events.jsonl → observability.db
+      dashboard.sh             Launches observability dashboard on localhost:3737
+    logs/
+      events.jsonl             Append-only agent event log
+      observability.db         SQLite synced from events.jsonl (gitignored)
+      progress.md              Living state doc — survives context resets
     specs/                     Feature specs — all features start here
     worktrees/                 Transient agent working dirs (gitignored)
-    loci-docs/                 Human-only — excluded via sparse checkout
+    loci-docs/                 Human-only — excluded via .claudeignore
     frontend/src/
     backend/src/
+    .claudeignore              Excludes loci-docs/ from Claude Code context
 ```
 
 ### Agent registry
@@ -151,6 +165,15 @@ The schema does not change.
 - Four fields per line: timestamp, agent, task, action
 - One log file per Claude Code invocation (PPID as session anchor)
 - `logs/` is gitignored — never committed
+
+Events sync to `logs/observability.db` (SQLite). Dashboard at localhost:3737,
+auto-shuts down after 10 min idle. Shows cost by agent, cost by bucket, trace
+summaries, retry rates, daily trends. Agents can read but never modify.
+
+```bash
+./scripts/sync-events.sh  # sync events.jsonl → observability.db
+./scripts/dashboard.sh    # launch dashboard
+```
 
 ---
 
@@ -205,3 +228,15 @@ Minimum viable experience that feels complete:
 4. Basic note persistence via backend API
 5. Desktop WASD navigation (non-VR fallback)
 6. One additional world beyond the default
+
+### Current status
+
+| Item | Status |
+|---|---|
+| Entry sequence (darkness → quote → world) | Done — PR #11, #14 |
+| Frontend scaffold (Vite + R3F + XR + HTTPS) | Done — PR #12 |
+| Default Hokkaido mansion with time-of-day lighting | Not started |
+| Notes as orbs — create, place, reveal on proximity | Not started |
+| Note persistence via backend API | Not started |
+| Desktop WASD navigation | Spec written |
+| One additional world beyond the default | Not started |
